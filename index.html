@@ -8,36 +8,98 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- KaTeX: zorgt dat formules als echte wiskunde worden getoond -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        .katex { font-size: 1.05em; }
         .choice-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .choice-card:hover { transform: translateY(-2px); }
         .choice-card.selected { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.15); box-shadow: 0 0 15px rgba(59, 130, 246, 0.25); }
         .step-badge { transition: all 0.3s ease; }
+
+        /* ---------- Animaties ---------- */
+        @keyframes flyIn {
+            0%   { opacity: 0; transform: translateY(48px) scale(.92) rotate(-2deg); }
+            60%  { opacity: 1; transform: translateY(-6px) scale(1.02) rotate(.5deg); }
+            100% { opacity: 1; transform: none; }
+        }
+        .anim-fly-in { animation: flyIn .7s cubic-bezier(.2,.8,.2,1) both; }
+
+        @keyframes slideOut { to { opacity: 0; transform: translateX(110%) rotate(8deg); } }
+        .anim-slide-out { animation: slideOut .45s ease-in forwards; }
+
+        @keyframes stampIn {
+            0%   { opacity: 0; transform: translate(-50%,-50%) scale(3) rotate(-30deg); }
+            70%  { opacity: 1; transform: translate(-50%,-50%) scale(.92) rotate(-12deg); }
+            100% { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(-12deg); }
+        }
+        .stamp {
+            position: absolute; left: 50%; top: 45%; z-index: 5;
+            border: 4px solid #10b981; color: #10b981; background: rgba(2,6,23,.75);
+            font-weight: 900; font-size: 1.6rem; letter-spacing: .12em; padding: .3rem 1rem; border-radius: .75rem;
+            animation: stampIn .45s cubic-bezier(.3,1.4,.6,1) both; pointer-events: none;
+        }
+
+        @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
+        .anim-pop { animation: pop .35s ease-out; }
+
+        @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+        .anim-shake { animation: shake .4s ease-in-out; }
+
+        @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(.95); } to { opacity: 1; transform: none; } }
+        .modal-panel { animation: modalIn .35s cubic-bezier(.2,.8,.2,1) both; }
+
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+        .skeleton { background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%); background-size: 800px 100%; animation: shimmer 1.2s linear infinite; }
+
+        @keyframes caret { 50% { opacity: 0; } }
+        .typing::after { content: '▍'; color: #60a5fa; animation: caret .8s steps(1) infinite; margin-left: 1px; }
+
+        @keyframes glowPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.0); } 50% { box-shadow: 0 0 22px 2px rgba(59,130,246,.35); } }
+        .new-glow { animation: glowPulse 1.6s ease-in-out 3; }
+
+        @keyframes bump { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }
+        .anim-bump { animation: bump .3s ease-out; }
+
+        .timer-danger { animation: pulseRed 1s ease-in-out infinite; }
+        @keyframes pulseRed { 0%,100% { color: #f87171; } 50% { color: #fecaca; } }
+
+        .coin { position: fixed; z-index: 120; font-size: 22px; pointer-events: none; transition: transform .9s cubic-bezier(.5,-0.3,.7,1), opacity .9s; }
+
+        /* Rondleiding: het uitgelichte blok krijgt een "spotlight" */
+        .tut-focus { position: relative; z-index: 70; box-shadow: 0 0 0 4px #3b82f6, 0 0 0 9999px rgba(2,6,23,.78); border-radius: 1.5rem; transition: box-shadow .3s; }
+
+        .prog-fill { transition: width .5s cubic-bezier(.2,.8,.2,1), background-color .3s; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
 
     <!-- HEADER -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-xl">
-        <div class="flex items-center gap-3">
-            <div class="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-500/30">
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 shadow-xl">
+        <div class="flex items-center gap-3 min-w-0">
+            <div class="bg-blue-600 p-2.5 rounded-2xl text-white shadow-lg shadow-blue-500/30 shrink-0">
                 <i data-lucide="wrench" class="w-6 h-6"></i>
             </div>
-            <div>
-                <h1 class="font-extrabold text-lg text-white leading-tight">Mechanica Missies</h1>
-                <p class="text-xs text-slate-400">Interactief Natuurkunde & Motor Lab</p>
+            <div class="min-w-0">
+                <h1 class="font-extrabold text-lg text-white leading-tight truncate">Mechanica Missies</h1>
+                <p class="text-xs text-slate-400 hidden sm:block">Interactief Natuurkunde & Motor Lab</p>
             </div>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="bg-slate-800/80 border border-slate-700 px-4 py-1.5 rounded-2xl flex items-center gap-2 shadow-inner">
+        <div class="flex items-center gap-2 sm:gap-3">
+            <div class="bg-slate-800/80 border border-slate-700 px-3 sm:px-4 py-1.5 rounded-2xl flex items-center gap-2 shadow-inner">
                 <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
-                <span class="text-xs text-slate-400">Score:</span>
-                <span id="global-score" class="font-bold text-amber-400">0</span>
+                <span class="text-xs text-slate-400 hidden sm:inline">Score:</span>
+                <span id="global-score" class="font-bold text-amber-400 inline-block">0</span>
             </div>
-            <button onclick="openModal('info')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3.5 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-slate-700">
-                <i data-lucide="book-open" class="w-4 h-4 text-blue-400"></i> Formules & Theorie
+            <button onclick="startTutorial()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-slate-700" title="Rondleiding">
+                <i data-lucide="compass" class="w-4 h-4 text-emerald-400"></i> <span class="hidden md:inline">Rondleiding</span>
+            </button>
+            <button onclick="openModal('info')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-slate-700" title="Formules & Theorie">
+                <i data-lucide="book-open" class="w-4 h-4 text-blue-400"></i> <span class="hidden md:inline">Formules & Theorie</span>
             </button>
         </div>
     </header>
@@ -45,39 +107,48 @@
     <!-- MAIN CONTAINER -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
 
-        <!-- ================= SCREEN 1: MISSION SELECT ================= -->
+        <!-- ================= SCREEN 1: CONTRACTENBORD ================= -->
         <div id="screen-mission-select" class="block space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-6 rounded-3xl border border-slate-800 backdrop-blur shadow-lg">
-                <div>
-                    <h2 class="text-2xl font-bold text-white mb-1">Kies een Natuurkunde Opdracht</h2>
-                    <p class="text-sm text-slate-400">Je begint steeds met een lege werkbank. Bouw de motor onderdeel voor onderdeel op om te zien wat er gebeurt.</p>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 p-6 rounded-3xl border border-slate-800 shadow-lg">
+                <div class="space-y-3">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white mb-1">Contractenbord</h2>
+                        <p class="text-sm text-slate-400">Klanten sturen je opdrachten. Bouw voor elke klant een motor die precies aan hun eisen voldoet. Voltooide contracten worden vervangen door een nieuwe opdracht, en het wordt steeds uitdagender.</p>
+                    </div>
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span id="rank-badge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">Niveau 1 · Leerling</span>
+                        <div class="w-40 h-2 bg-slate-800 rounded-full overflow-hidden"><div id="rank-progress" class="prog-fill h-full bg-amber-400 rounded-full" style="width:0%"></div></div>
+                        <span id="rank-text" class="text-xs text-slate-400">Nog 3 contracten tot Monteur</span>
+                    </div>
                 </div>
-                <button onclick="refreshMissions()" class="self-start md:self-auto bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2.5 rounded-2xl text-sm font-semibold flex items-center gap-2 transition shadow-sm">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Ververs Opdrachten
+                <button onclick="refreshMissions()" class="self-start md:self-auto bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2.5 rounded-2xl text-sm font-semibold flex items-center gap-2 transition shadow-sm shrink-0">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Andere Opdrachten
                 </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="mission-grid">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6" id="mission-grid">
                 <!-- Dynamisch via JS -->
             </div>
         </div>
 
-        <!-- ================= SCREEN 2: WORKBENCH ================= -->
+        <!-- ================= SCREEN 2: WERKBANK ================= -->
         <div id="screen-workbench" class="hidden space-y-6">
             <!-- Top Bar met Missie Info & Timer -->
             <div class="bg-slate-900 border border-slate-800 p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
-                <div class="flex items-center gap-4">
-                    <button onclick="abortMission()" class="bg-slate-800 hover:bg-slate-700 p-2.5 rounded-2xl border border-slate-700 text-slate-300 transition">
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <button onclick="abortMission()" class="bg-slate-800 hover:bg-slate-700 p-2.5 rounded-2xl border border-slate-700 text-slate-300 transition shrink-0" title="Terug naar contractenbord">
                         <i data-lucide="arrow-left" class="w-5 h-5"></i>
                     </button>
-                    <div>
+                    <div id="active-client-emoji" class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl shrink-0">🔧</div>
+                    <div class="min-w-0">
                         <span id="active-mission-level" class="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg">Contract 01</span>
-                        <h3 id="active-mission-title" class="text-xl font-bold text-white mt-1">Sportwagen Project</h3>
+                        <h3 id="active-mission-title" class="text-xl font-bold text-white mt-1 truncate">Klant</h3>
+                        <p id="active-mission-story" class="text-xs text-slate-400"></p>
                     </div>
                 </div>
                 <!-- Timer -->
-                <div class="flex items-center gap-5 bg-slate-950 px-5 py-2 rounded-2xl border border-slate-800">
+                <div class="flex items-center gap-5 bg-slate-950 px-5 py-2 rounded-2xl border border-slate-800 shrink-0">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="clock" class="w-5 h-5 text-amber-500 animate-pulse"></i>
+                        <i data-lucide="clock" class="w-5 h-5 text-amber-500"></i>
                         <span class="text-xs text-slate-400 uppercase font-semibold">Tijd:</span>
                     </div>
                     <span id="timer-display" class="font-mono font-bold text-xl text-amber-400">03:00</span>
@@ -86,127 +157,134 @@
 
             <!-- Workspace Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                <!-- LINKS: Keuzemenu Onderdelen (7 cols) -->
+
+                <!-- LINKS: Eisen + Onderdelen (7 cols) -->
                 <div class="lg:col-span-7 space-y-5">
-                    
+
                     <!-- Opdracht Doelen -->
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg">
+                    <div id="req-panel" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg">
                         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-                            <i data-lucide="target" class="w-4 h-4 text-blue-400"></i> Missie Doelen & Eisen
+                            <i data-lucide="target" class="w-4 h-4 text-blue-400"></i> Eisen van de klant
                         </h4>
-                        <div id="mission-requirements" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div id="mission-requirements" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <!-- Dynamisch -->
                         </div>
                     </div>
 
                     <!-- KEUZESELECTIE -->
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg space-y-6">
-                        
+                    <div id="parts-panel" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg space-y-6">
+
                         <!-- STAP 1. CILINDERBLOK -->
                         <div>
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center justify-between gap-2 mb-2">
                                 <label class="text-sm font-bold text-white flex items-center gap-2">
                                     <span id="step-badge-block" class="step-badge w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold">1</span>
-                                    Cilinderblok (Basis-structuur)
+                                    Cilinderblok <span class="text-slate-400 font-medium">(aantal cilinders $n$)</span>
                                 </label>
-                                <span class="text-xs text-slate-400">Plaats het motorblok op de werkbank</span>
+                                <button onclick="openPartInfo('block')" class="info-btn shrink-0 text-xs font-semibold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1.5 transition">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> Wat doet dit?
+                                </button>
                             </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="options-block">
-                                <!-- Choices -->
-                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5" id="options-block"></div>
                         </div>
 
                         <!-- STAP 2. KRUKAS -->
                         <div>
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center justify-between gap-2 mb-2">
                                 <label class="text-sm font-bold text-white flex items-center gap-2">
                                     <span id="step-badge-crank" class="step-badge w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold">2</span>
-                                    Krukas (Slaglengte $s$)
+                                    Krukas <span class="text-slate-400 font-medium">(slaglengte $s$)</span>
                                 </label>
-                                <span class="text-xs text-slate-400">Bepaalt de arm / hefboom</span>
+                                <button onclick="openPartInfo('crank')" class="info-btn shrink-0 text-xs font-semibold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1.5 transition">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> Wat doet dit?
+                                </button>
                             </div>
-                            <div class="grid grid-cols-3 gap-2.5" id="options-crank">
-                                <!-- Choices -->
-                            </div>
+                            <div class="grid grid-cols-3 gap-2.5" id="options-crank"></div>
                         </div>
 
-                        <!-- STAP 3. ZUIGERBORING -->
+                        <!-- STAP 3. ZUIGER -->
                         <div>
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center justify-between gap-2 mb-2">
                                 <label class="text-sm font-bold text-white flex items-center gap-2">
                                     <span id="step-badge-piston" class="step-badge w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold">3</span>
-                                    Zuigerdiameter (Boring $d$)
+                                    Zuiger <span class="text-slate-400 font-medium">(boring $d$)</span>
                                 </label>
-                                <span class="text-xs text-slate-400">Bepaalt het drukoppervlak</span>
+                                <button onclick="openPartInfo('piston')" class="info-btn shrink-0 text-xs font-semibold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1.5 transition">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> Wat doet dit?
+                                </button>
                             </div>
-                            <div class="grid grid-cols-3 gap-2.5" id="options-piston">
-                                <!-- Choices -->
-                            </div>
+                            <div class="grid grid-cols-3 gap-2.5" id="options-piston"></div>
                         </div>
 
-                        <!-- STAP 4. ECU TOERENTAL -->
+                        <!-- STAP 4. ECU -->
                         <div>
-                            <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center justify-between gap-2 mb-2">
                                 <label class="text-sm font-bold text-white flex items-center gap-2">
                                     <span id="step-badge-ecu" class="step-badge w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold">4</span>
-                                    ECU Afstelling (Toerental RPM)
+                                    ECU <span class="text-slate-400 font-medium">(toerental)</span>
                                 </label>
-                                <span class="text-xs text-slate-400">Start de motor & hoeksnelheid $\omega$</span>
+                                <button onclick="openPartInfo('ecu')" class="info-btn shrink-0 text-xs font-semibold text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 px-2.5 py-1 rounded-xl flex items-center gap-1.5 transition">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> Wat doet dit?
+                                </button>
                             </div>
-                            <div class="grid grid-cols-3 gap-2.5" id="options-ecu">
-                                <!-- Choices -->
-                            </div>
+                            <div class="grid grid-cols-3 gap-2.5" id="options-ecu"></div>
                         </div>
-
                     </div>
                 </div>
 
-                <!-- RECHTS: Visualisatie op de Werkbank & Natuurkunde Uitleg (5 cols) -->
+                <!-- RECHTS: Werkbank + Live berekening (5 cols) -->
                 <div class="lg:col-span-5 space-y-5">
-                    
+
                     <!-- Motor Animatie Canvas -->
-                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg space-y-3">
+                    <div id="bench-panel" class="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg space-y-3">
                         <div class="flex items-center justify-between">
                             <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-2">
                                 <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i> Visuele Werkbank
                             </h4>
                             <span id="engine-status-badge" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 font-semibold border border-slate-700">Lege Werkbank</span>
                         </div>
-                        
-                        <div class="relative bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden flex items-center justify-center p-2" style="height: 200px;">
-                            <canvas id="engine-canvas" width="450" height="200" class="w-full h-full object-contain"></canvas>
+
+                        <div class="relative bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                            <canvas id="engine-canvas" class="w-full block" style="aspect-ratio: 560 / 260;"></canvas>
+                        </div>
+
+                        <!-- Legenda van de 4 slagen -->
+                        <div id="stroke-legend" class="hidden flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#38bdf8"></span>1 Inlaat</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#a78bfa"></span>2 Compressie</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#fb923c"></span>3 Arbeid (ontsteking!)</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#94a3b8"></span>4 Uitlaat</span>
                         </div>
 
                         <!-- Measured Stats Grid -->
                         <div class="grid grid-cols-2 gap-2.5">
                             <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                                <span class="text-[11px] text-slate-400 block font-medium">Slagvolume ($V_s$)</span>
+                                <span class="text-[11px] text-slate-400 block font-medium">Slagvolume $V_s$</span>
                                 <span id="stat-cc" class="text-lg font-bold text-slate-500">-- cc</span>
                             </div>
                             <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                                <span class="text-[11px] text-slate-400 block font-medium">Koppel ($M$)</span>
+                                <span class="text-[11px] text-slate-400 block font-medium">Koppel $M$</span>
                                 <span id="stat-torque" class="text-lg font-bold text-slate-500">-- Nm</span>
                             </div>
                             <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                                <span class="text-[11px] text-slate-400 block font-medium">Vermogen ($P$)</span>
+                                <span class="text-[11px] text-slate-400 block font-medium">Vermogen $P$</span>
                                 <span id="stat-power" class="text-lg font-bold text-slate-500">-- kW</span>
                             </div>
                             <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                                <span class="text-[11px] text-slate-400 block font-medium">Toerental ($\text{RPM}$)</span>
+                                <span class="text-[11px] text-slate-400 block font-medium">Toerental</span>
                                 <span id="stat-rpm" class="text-lg font-bold text-slate-500">-- RPM</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- WAT GEBEURT ER NU? (Natuurkunde-Uitleg Box) -->
-                    <div class="bg-slate-900 border border-blue-500/30 p-5 rounded-3xl shadow-xl space-y-3 relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl"></div>
+                    <!-- LIVE BEREKENING -->
+                    <div id="calc-panel" class="bg-slate-900 border border-blue-500/30 p-5 rounded-3xl shadow-xl space-y-3 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
                         <h4 class="font-bold text-sm text-blue-400 flex items-center gap-2">
-                            <i data-lucide="sparkles" class="w-4 h-4 text-blue-400"></i> Wat gebeurt er op de werkbank?
+                            <i data-lucide="calculator" class="w-4 h-4 text-blue-400"></i> Live berekening met jouw onderdelen
                         </h4>
-                        <div id="physics-explanation" class="text-xs text-slate-300 leading-relaxed space-y-2 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-                            <!-- Dynamische uitleg per stap -->
+                        <div id="physics-explanation" class="text-xs text-slate-300 leading-relaxed space-y-2.5 bg-slate-950/80 p-4 rounded-2xl border border-slate-800 overflow-x-auto">
+                            <!-- Dynamisch -->
                         </div>
                     </div>
 
@@ -215,579 +293,1497 @@
         </div>
     </main>
 
-    <!-- MODALS -->
+    <!-- ================= MODALS ================= -->
 
     <!-- Win Modal -->
-    <div id="modal-win" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 max-w-md w-full p-6 rounded-3xl shadow-2xl text-center space-y-5">
-            <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
-                <i data-lucide="check-circle-2" class="w-8 h-8"></i>
-            </div>
+    <div id="modal-win" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] flex items-center justify-center p-4 hidden">
+        <div class="modal-panel bg-slate-900 border border-slate-800 max-w-md w-full p-6 rounded-3xl shadow-2xl text-center space-y-5">
+            <div id="win-emoji" class="w-16 h-16 bg-emerald-500/20 text-4xl rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30 shadow-lg shadow-emerald-500/10">🎉</div>
             <div>
-                <h3 class="text-2xl font-bold text-white">Missie Geslaagd!</h3>
-                <p class="text-xs text-slate-400 mt-1">Gefeliciteerd! Je hebt alle motoronderdelen correct samengesteld en de doelen behaald.</p>
+                <h3 class="text-2xl font-bold text-white">Klant tevreden!</h3>
+                <p id="win-quote" class="text-sm text-slate-300 mt-1 italic">"Precies wat we nodig hadden!"</p>
             </div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-around">
-                <div>
-                    <span class="text-xs text-slate-400 block">Verdiende Punten</span>
-                    <span id="win-score" class="text-xl font-bold text-amber-400">+350 pt</span>
-                </div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-sm">
+                <div class="flex justify-between text-slate-400"><span>Beloning contract</span><span id="win-base" class="font-semibold text-slate-200">+0</span></div>
+                <div class="flex justify-between text-slate-400"><span>Tijdbonus (1 pt per seconde over)</span><span id="win-bonus" class="font-semibold text-slate-200">+0</span></div>
+                <div class="flex justify-between border-t border-slate-800 pt-2"><span class="font-bold text-white">Totaal</span><span id="win-score" class="text-xl font-bold text-amber-400">+0 pt</span></div>
             </div>
-            <button onclick="closeModal('win')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl transition shadow-lg shadow-emerald-600/30 text-sm">
-                Volgende Opdracht <i data-lucide="arrow-right" class="w-4 h-4 inline ml-1"></i>
+            <div id="win-levelup" class="hidden text-sm font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3"></div>
+            <button onclick="closeModal('win')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl transition shadow-lg shadow-emerald-600/30 text-sm flex items-center justify-center gap-2">
+                Naar het contractenbord <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
         </div>
     </div>
 
     <!-- Fail / Timeout Modal -->
-    <div id="modal-fail" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 max-w-md w-full p-6 rounded-3xl shadow-2xl text-center space-y-5">
+    <div id="modal-fail" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] flex items-center justify-center p-4 hidden">
+        <div class="modal-panel bg-slate-900 border border-slate-800 max-w-md w-full p-6 rounded-3xl shadow-2xl text-center space-y-5">
             <div class="w-16 h-16 bg-red-500/20 text-red-400 rounded-2xl flex items-center justify-center mx-auto border border-red-500/30">
-                <i data-lucide="x-circle" class="w-8 h-8"></i>
+                <i data-lucide="circle-x" class="w-8 h-8"></i>
             </div>
             <div>
                 <h3 class="text-2xl font-bold text-white">Tijd Verstreken!</h3>
-                <p class="text-xs text-slate-400 mt-1">De tijd is helaas om voordat alle onderdelen geselecteerd waren of de motor voldeed.</p>
+                <p class="text-xs text-slate-400 mt-1">De tijd is om voordat de motor aan alle eisen voldeed.</p>
             </div>
-            <button onclick="closeModal('fail')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-2xl transition border border-slate-700 text-sm">
-                Probeer Opnieuw
-            </button>
+            <div id="fail-details" class="text-left text-xs text-slate-300 bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-1"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeModal('fail')" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-2xl transition border border-slate-700 text-sm">Contractenbord</button>
+                <button onclick="retryMission()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-2xl transition text-sm flex items-center justify-center gap-2"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Opnieuw</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Onderdeel-uitleg Modal -->
+    <div id="modal-part" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] flex items-center justify-center p-4 hidden" onclick="if(event.target===this) closeModal('part')">
+        <div class="modal-panel bg-slate-900 border border-slate-800 max-w-lg w-full p-6 rounded-3xl shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 id="part-title" class="text-lg font-bold text-white flex items-center gap-2">Onderdeel</h3>
+                <button onclick="closeModal('part')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                <canvas id="part-canvas" class="w-full block" style="aspect-ratio: 340 / 180;"></canvas>
+            </div>
+            <div id="part-body" class="space-y-3 text-sm text-slate-300 leading-relaxed"></div>
+            <button onclick="closeModal('part')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-2xl transition text-sm">Begrepen!</button>
         </div>
     </div>
 
     <!-- Info / Theory Modal -->
-    <div id="modal-info" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 max-w-lg w-full p-6 rounded-3xl shadow-2xl space-y-4">
+    <div id="modal-info" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[90] flex items-center justify-center p-4 hidden" onclick="if(event.target===this) closeModal('info')">
+        <div class="modal-panel bg-slate-900 border border-slate-800 max-w-lg w-full p-6 rounded-3xl shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
                     <i data-lucide="book-open" class="w-5 h-5 text-blue-400"></i> Natuurkunde Formules
                 </h3>
-                <button onclick="closeModal('info')" class="text-slate-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <button onclick="closeModal('info')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="space-y-3 text-xs text-slate-300 max-h-96 overflow-y-auto pr-1">
+            <div class="space-y-3 text-xs text-slate-300 max-h-[60vh] overflow-y-auto pr-1">
                 <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                    <strong class="text-blue-400 block mb-1 text-sm">1. Cilinderinhoud ($V_s$):</strong>
-                    $$V_s = \pi \cdot \left(\frac{d}{2}\right)^2 \cdot s \cdot n$$
-                    <p class="text-slate-400 mt-1">Waarbij $d$ de boring is, $s$ de slaglengte, en $n$ het aantal cilinders.</p>
+                    <strong class="text-blue-400 block mb-1 text-sm">1. Zuigeroppervlak & slagvolume</strong>
+                    $$A = \pi \cdot \left(\frac{d}{2}\right)^2 \qquad V_s = A \cdot s \cdot n$$
+                    <p class="text-slate-400 mt-1">$d$ = boring (diameter zuiger), $s$ = slaglengte, $n$ = aantal cilinders. $1\ \text{cc} = 1\ \text{cm}^3 = 10^{-6}\ \text{m}^3$.</p>
                 </div>
                 <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                    <strong class="text-amber-400 block mb-1 text-sm">2. Koppel ($M$):</strong>
-                    $$M = F \cdot r$$
-                    <p class="text-slate-400 mt-1">De rotatiekracht op de krukas. Een langere krukas ($s$) vergroot de hefboomarm $r$.</p>
+                    <strong class="text-rose-400 block mb-1 text-sm">2. Kracht op de zuiger</strong>
+                    $$F = p \cdot A$$
+                    <p class="text-slate-400 mt-1">Het ontploffende gas duwt met druk $p$ op de zuiger. In deze game rekenen we met een gemiddelde druk van $p = 11\ \text{bar} = 1{,}1 \cdot 10^6\ \text{Pa}$.</p>
                 </div>
                 <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                    <strong class="text-emerald-400 block mb-1 text-sm">3. Vermogen ($P$):</strong>
+                    <strong class="text-amber-400 block mb-1 text-sm">3. Koppel ($M$)</strong>
+                    $$M = F \cdot r \quad\text{met}\quad r = \frac{s}{2}$$
+                    <p class="text-slate-400 mt-1">De krukarm $r$ is de hefboom. Omdat een zuiger maar in 1 van de 4 slagen duwt (één arbeidsslag per 2 omwentelingen), is het <em>gemiddelde</em> koppel van de hele motor:</p>
+                    $$M_{\text{gem}} = \frac{n \cdot F \cdot r}{2\pi}$$
+                </div>
+                <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                    <strong class="text-emerald-400 block mb-1 text-sm">4. Vermogen ($P$)</strong>
                     $$P = M \cdot \omega \quad \text{met} \quad \omega = \frac{2\pi \cdot \text{RPM}}{60}$$
-                    <p class="text-slate-400 mt-1">Het vermogenstotaal hangt rechtstreeks af van het koppel $M$ én de hoeksnelheid $\omega$.</p>
+                    <p class="text-slate-400 mt-1">Vermogen hangt af van het koppel $M$ én de hoeksnelheid $\omega$. Het toerental verandert het koppel niet, maar wél het vermogen.</p>
                 </div>
             </div>
-            <button onclick="closeModal('info')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-2xl transition text-sm">
-                Sluit Uitleg
-            </button>
+            <button onclick="closeModal('info')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-2xl transition text-sm">Sluit Uitleg</button>
         </div>
     </div>
 
+    <!-- Rondleiding tooltip -->
+    <div id="tut-box" class="hidden fixed z-[80] left-0 right-0 mx-auto bottom-4 w-[calc(100%-2rem)] max-w-md bg-slate-900 border border-blue-500/50 rounded-3xl shadow-2xl p-5 space-y-3">
+        <div class="flex items-center justify-between">
+            <span id="tut-step" class="text-[11px] font-bold uppercase tracking-wider text-blue-400">Stap 1/5</span>
+            <button onclick="endTutorial()" class="text-xs text-slate-400 hover:text-white">Overslaan</button>
+        </div>
+        <h4 id="tut-title" class="font-bold text-white text-base">Titel</h4>
+        <p id="tut-text" class="text-sm text-slate-300 leading-relaxed">Tekst</p>
+        <div class="flex justify-end">
+            <button id="tut-next" onclick="nextTutStep()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-xl text-sm flex items-center gap-2">Volgende <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+        </div>
+    </div>
+
+    <!-- Confetti laag -->
+    <canvas id="confetti-canvas" class="fixed inset-0 w-full h-full pointer-events-none z-[110]"></canvas>
+
     <script>
-        // --- ONDERDELEN DATA ---
+        // =====================================================================
+        //  ONDERDELEN & NATUURKUNDE
+        // =====================================================================
+        const P_MEAN = 1.1e6; // gemiddelde druk op de zuiger in Pa (11 bar)
+
         const optionsData = {
             block: [
-                { id: 'b1', name: '1 Cilinder', val: 1, desc: 'Compact & Licht' },
+                { id: 'b1', name: '1 Cilinder',  val: 1, desc: 'Compact & licht' },
                 { id: 'b2', name: '2 Cilinders', val: 2, desc: 'Gebalanceerd' },
-                { id: 'b4', name: '4 Cilinders', val: 4, desc: 'Hoge Kracht' },
-                { id: 'b6', name: '6 Cilinders', val: 6, desc: 'Grootste Volume' }
+                { id: 'b4', name: '4 Cilinders', val: 4, desc: 'Veel kracht' },
+                { id: 'b6', name: '6 Cilinders', val: 6, desc: 'Grootste volume' }
             ],
             crank: [
-                { id: 'c1', name: 'Kort (75mm)', val: 75, desc: 'Korte hefboom arm' },
-                { id: 'c2', name: 'Middel (90mm)', val: 90, desc: 'Standaard hefboom' },
-                { id: 'c3', name: 'Lang (110mm)', val: 110, desc: 'Grote arm = Hoge M' }
+                { id: 'c1', name: 'Kort (75mm)',   val: 75,  desc: 'Korte hefboomarm' },
+                { id: 'c2', name: 'Middel (90mm)', val: 90,  desc: 'Standaard hefboom' },
+                { id: 'c3', name: 'Lang (110mm)',  val: 110, desc: 'Lange arm = meer M' }
             ],
             piston: [
-                { id: 'p1', name: 'Smal (75mm)', val: 75, desc: 'Klein drukoppervlak' },
+                { id: 'p1', name: 'Smal (75mm)',   val: 75, desc: 'Klein oppervlak A' },
                 { id: 'p2', name: 'Middel (85mm)', val: 85, desc: 'Gemiddeld oppervlak' },
-                { id: 'p3', name: 'Breed (95mm)', val: 95, desc: 'Groot drukoppervlak' }
+                { id: 'p3', name: 'Breed (95mm)',  val: 95, desc: 'Groot oppervlak A' }
             ],
             ecu: [
-                { id: 'e1', name: 'Eco (1200 RPM)', val: 1200, desc: 'Lage hoeksnelheid ω' },
+                { id: 'e1', name: 'Eco (1200 RPM)',   val: 1200, desc: 'Lage ω' },
                 { id: 'e2', name: 'Sport (2500 RPM)', val: 2500, desc: 'Gemiddelde ω' },
-                { id: 'e3', name: 'Race (4000 RPM)', val: 4000, desc: 'Hoge hoeksnelheid ω' }
+                { id: 'e3', name: 'Race (4000 RPM)',  val: 4000, desc: 'Hoge ω' }
             ]
         };
+        const PART_NAMES = { block: 'cilinderblok', crank: 'krukas', piston: 'zuiger', ecu: 'ECU' };
 
-        // Global State Variables
-        let missions = [];
-        let currentMission = null;
-        let missionCounter = 1;
-        let totalScore = 0;
-        let timerInterval = null;
-        let timeLeft = 0;
-        let isCompleted = false;
-
-        // Current choices START FULLY EMPTY (null)
-        let selectedConfig = {
-            block: null,
-            crank: null,
-            piston: null,
-            ecu: null
+        // Welke grootheid hangt van welke onderdelen af
+        const KEY_INFO = {
+            cyl:    { unit: 'cil.',    word: 'cilinders',   dec: 0, needs: ['block'],                    cat: 'block' },
+            stroke: { unit: 'mm',  word: 'slaglengte',  dec: 0, needs: ['crank'],                    cat: 'crank' },
+            bore:   { unit: 'mm',  word: 'boring',      dec: 0, needs: ['piston'],                   cat: 'piston' },
+            rpm:    { unit: 'RPM', word: 'toerental',   dec: 0, needs: ['ecu'],                      cat: 'ecu' },
+            cc:     { unit: 'cc',  word: 'slagvolume',  dec: 0, needs: ['block', 'crank', 'piston'] },
+            torque: { unit: 'Nm',  word: 'koppel',      dec: 0, needs: ['block', 'crank', 'piston'] },
+            power:  { unit: 'kW',  word: 'vermogen',    dec: 1, needs: ['block', 'crank', 'piston', 'ecu'] }
         };
 
-        let livePhysics = { cc: 0, torque: 0, power: 0, rpm: 0, cyl: 0, stroke: 0, bore: 0, isComplete: false };
-
-        // --- INIT ---
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) lucide.createIcons();
-            initMissions();
-            startEngineCanvasLoop();
-        });
-
-        // --- MATH & PHYSICS CALCULATION ---
-        function calculatePhysics(cyl, stroke, bore, rpm) {
-            if (!cyl || !stroke || !bore || !rpm) {
-                return { cc: 0, torque: 0, power: 0, rpm: 0, omega: 0, cyl: cyl||0, stroke: stroke||0, bore: bore||0, isComplete: false };
+        // Berekent alles wat met de gekozen onderdelen al te berekenen is
+        function calc(n, s, d, rpm) {
+            const st = { cyl: n || null, stroke: s || null, bore: d || null, rpm: rpm || null,
+                         A: null, F: null, r: null, omega: null, Vcyl: null, V: null, cc: null, torque: null, power: null };
+            if (d) { st.A = Math.PI * Math.pow(d / 2000, 2); st.F = P_MEAN * st.A; }
+            if (s) st.r = s / 2000;
+            if (rpm) st.omega = 2 * Math.PI * rpm / 60;
+            if (n && s && d) {
+                st.Vcyl = st.A * (s / 1000);
+                st.V = st.Vcyl * n;
+                st.cc = st.V * 1e6;
+                st.torque = n * st.F * st.r / (2 * Math.PI); // gemiddeld koppel 4-takt
             }
-
-            const boreM = bore / 1000;
-            const strokeM = stroke / 1000;
-            const areaM2 = Math.PI * Math.pow(boreM / 2, 2);
-            const singleVolM3 = areaM2 * strokeM;
-            const totalCC = Math.round((singleVolM3 * 1e6) * cyl);
-            
-            const omega = (2 * Math.PI * rpm) / 60; // rad/s
-            
-            let baseBMEP = 1100000; // Pa pressure
-            const pistonSpeed = 2 * strokeM * (rpm / 60);
-            if (pistonSpeed > 22) baseBMEP *= (22 / pistonSpeed);
-            
-            const torquePerCyl = (baseBMEP * singleVolM3) / (4 * Math.PI);
-            const torque = torquePerCyl * cyl;
-            const power = (torque * omega) / 1000; // kW
-
-            return { cc: totalCC, torque, power, rpm, omega, cyl, stroke, bore, isComplete: true };
+            if (st.torque != null && rpm) st.power = st.torque * st.omega / 1000;
+            st.isComplete = !!(n && s && d && rpm);
+            return st;
         }
+        function roundK(key, v) { const f = Math.pow(10, KEY_INFO[key].dec); return Math.round(v * f) / f; }
 
-        // Generate procedural doable missions
-        function generateRandomMission() {
-            const b = optionsData.block[Math.floor(Math.random() * optionsData.block.length)];
-            const c = optionsData.crank[Math.floor(Math.random() * optionsData.crank.length)];
-            const p = optionsData.piston[Math.floor(Math.random() * optionsData.piston.length)];
-            const e = optionsData.ecu[Math.floor(Math.random() * optionsData.ecu.length)];
-            
-            const stats = calculatePhysics(b.val, c.val, p.val, e.val);
-            const reqs = [];
-            
-            // Requirement 1
-            if (Math.random() > 0.5) {
-                reqs.push({ id: 'cyl', label: `Exact ${b.val} Cilinder(s)`, check: (s) => s.isComplete && s.cyl === b.val });
-            } else {
-                const targetCC = Math.ceil((stats.cc + 20) / 100) * 100;
-                reqs.push({ id: 'vol', label: `Max. ${targetCC} cc Inhoud`, check: (s) => s.isComplete && s.cc <= targetCC });
+        // =====================================================================
+        //  HULPFUNCTIES
+        // =====================================================================
+        const $ = (sel) => document.querySelector(sel);
+        const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const fmt = (v, dec = 0) => Number(v).toLocaleString('nl-NL', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: false });
+        const tx = (v, dec = 0) => fmt(v, dec).replace(',', '{,}');        // getal in KaTeX
+        function sci(x, sig = 3) {                                           // wetenschappelijke notatie in KaTeX
+            const e = Math.floor(Math.log10(Math.abs(x)));
+            const m = x / Math.pow(10, e);
+            return `${tx(m, sig - 1)} \\cdot 10^{${e}}`;
+        }
+        function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+        function renderMath(el) {
+            if (window.renderMathInElement && el) {
+                renderMathInElement(el, { delimiters: [ { left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false } ], throwOnError: false });
             }
+        }
+        function icons() { if (window.lucide) lucide.createIcons(); }
+        function replayAnim(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+        const store = {
+            get(k, d) { try { const v = localStorage.getItem('mm_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+            set(k, v) { try { localStorage.setItem('mm_' + k, JSON.stringify(v)); } catch (e) {} }
+        };
 
-            // Requirement 2
-            if (Math.random() > 0.5) {
-                const targetPow = Math.max(1, Math.floor(stats.power * 0.85));
-                reqs.push({ id: 'pow', label: `Min. ${targetPow} kW Vermogen`, check: (s) => s.isComplete && s.power >= targetPow });
-            } else {
-                const targetTorq = Math.max(10, Math.floor(stats.torque * 0.85));
-                reqs.push({ id: 'tor', label: `Min. ${targetTorq} Nm Koppel`, check: (s) => s.isComplete && s.torque >= targetTorq });
+        // =====================================================================
+        //  SLIMME CONTRACT-GENERATOR
+        // =====================================================================
+        // Alle 108 mogelijke motoren, om te checken of een contract oplosbaar is
+        const ALL = [];
+        optionsData.block.forEach(b => optionsData.crank.forEach(c => optionsData.piston.forEach(p => optionsData.ecu.forEach(e => {
+            ALL.push(calc(b.val, c.val, p.val, e.val));
+        }))));
+
+        const CLIENTS = [
+            { name: 'Pizzeria Bella Napoli', emoji: '🍕', vehicle: 'bezorgscooter', focus: ['cc', 'power', 'cyl'],
+              fits: s => s.cc <= 750 && s.power <= 25,
+              intro: ['We bezorgen pizza\'s door de hele stad en willen een zuinige motor voor onze nieuwe bezorgscooter.', 'Onze scooters staan de hele avond aan en moeten vooral zuinig en wendbaar zijn.'],
+              quote: 'Perfetto! De pizza\'s komen nu nog warm aan!' },
+            { name: 'Boer Jansen', emoji: '🚜', vehicle: 'tractor', focus: ['torque', 'rpm', 'stroke'],
+              fits: s => s.torque >= 150 && s.rpm <= 2500,
+              intro: ['Mijn oude tractor heeft het zwaar met de ploeg. Ik zoek een motor met veel trekkracht.', 'Met een volle aanhanger door de modder: daar heb ik een sterke, rustige motor voor nodig.'],
+              quote: 'Die ploegt door alles heen. Bedankt, jong!' },
+            { name: 'Racekart Team Sanne', emoji: '🏎️', vehicle: 'racekart', focus: ['power', 'rpm', 'cc'],
+              fits: s => s.rpm === 4000 && s.cc <= 1300,
+              intro: ['Volgende maand is het kampioenschap. Onze kart moet licht zijn en hoog in de toeren.', 'In de kartklasse geldt een limiet op het slagvolume, maar we willen wél winnen.'],
+              quote: 'Vroem! Daar gaan we de beker mee winnen!' },
+            { name: 'Rallyteam Noorderzon', emoji: '🏁', vehicle: 'rallyauto', focus: ['power', 'bore', 'rpm'],
+              fits: s => s.power >= 70,
+              intro: ['Voor de rally door de duinen hebben we een motor nodig met flink wat vermogen.', 'Onze rallyauto moet snel optrekken uit elke bocht.'],
+              quote: 'Wat een beest van een motor. Top werk!' },
+            { name: 'Havenbedrijf Rotterdam', emoji: '🚢', vehicle: 'sleepboot', focus: ['torque', 'cyl', 'rpm'],
+              fits: s => s.cyl === 6 && s.rpm === 1200,
+              intro: ['Onze sleepboot trekt containerschepen de haven in. Daarvoor is enorm veel koppel nodig.', 'Een sleepboot draait urenlang op lage toeren met een zware last.'],
+              quote: 'Die trekt zelfs een containerschip de haven in!' },
+            { name: 'Brandweer Kazerne 12', emoji: '🚒', vehicle: 'bluspomp', focus: ['power', 'cc', 'rpm'],
+              fits: s => s.power >= 35 && s.power <= 120,
+              intro: ['Onze bluspomp moet in één keer genoeg water kunnen verpompen.', 'Bij een brand telt elke seconde. De pompmotor moet krachtig en betrouwbaar zijn.'],
+              quote: 'Hiermee zijn we elke brand de baas!' },
+            { name: 'Festival Zonnedorp', emoji: '🎪', vehicle: 'stroomgenerator', focus: ['power', 'rpm', 'cyl'],
+              fits: s => s.rpm === 2500,
+              intro: ['Voor ons festival hebben we een generator nodig die het podium van stroom voorziet.', 'Een stroomgenerator moet op een vast toerental draaien om netjes stroom te leveren.'],
+              quote: 'De bas staat aan! Het festival kan beginnen!' },
+            { name: 'Bakkerij De Zoete Krul', emoji: '🥐', vehicle: 'bezorgbusje', focus: ['cc', 'torque', 'power'],
+              fits: s => s.cc >= 900 && s.cc <= 2600,
+              intro: ['Elke ochtend om 6 uur bezorgen we brood. Ons busje heeft een nieuwe motor nodig.', 'Ons busje is vaak volgeladen met broden en taarten.'],
+              quote: 'Heerlijk! Krijg je van ons een gratis croissant.' },
+            { name: 'Zitmaaierverhuur Groen', emoji: '🌱', vehicle: 'zitmaaier', focus: ['cyl', 'rpm', 'torque'],
+              fits: s => s.cyl <= 2 && s.rpm <= 2500,
+              intro: ['We verhuren zitmaaiers aan sportclubs. Ze moeten klein, stil en simpel zijn.', 'Voor onze zitmaaiers zoeken we een eenvoudige motor die niet te veel lawaai maakt.'],
+              quote: 'Die maait het voetbalveld in een kwartier!' },
+            { name: 'Taxicentrale 020', emoji: '🚕', vehicle: 'taxi', focus: ['cc', 'power', 'cyl'],
+              fits: s => s.cyl === 4,
+              intro: ['Onze taxi\'s rijden dag en nacht door de stad. We zoeken een betrouwbare viercilinder.', 'Een taxi moet comfortabel en soepel rijden, met genoeg vermogen voor de snelweg.'],
+              quote: 'Stap maar in, de meter loopt!' }
+        ];
+        const GENERIC_CLIENT = { name: 'Garage De Snelle Sleutel', emoji: '🔧', vehicle: 'testmotor', focus: ['power', 'torque', 'cc'],
+            fits: () => true, intro: ['We hebben een klant met hele precieze wensen voor een nieuwe testmotor.'], quote: 'Netjes gedaan, monteur!' };
+
+        const REASONS = {
+            cc_max: 'Hoe kleiner de motor, hoe zuiniger de {v}.',
+            cc_min: 'De {v} moet zware lasten kunnen verplaatsen.',
+            power_min: 'De {v} moet snel en krachtig genoeg zijn.',
+            power_max: 'Sterker dan dit sloopt de aandrijving van de {v}.',
+            torque_min: 'Veel trekkracht nodig om op gang te komen.',
+            torque_max: 'Meer koppel laat de wielen doorslippen.',
+            rpm_min: 'De {v} moet hoge toeren kunnen draaien.',
+            rpm_max: 'Hoge toeren maken te veel lawaai en slijtage.',
+            rpm_eq: 'De {v} werkt alleen goed op precies dit toerental.',
+            cyl_eq: 'Er is precies ruimte voor dit aantal cilinders.',
+            cyl_min: 'Meer cilinders lopen rustiger en trillen minder.',
+            cyl_max: 'De motorruimte van de {v} is klein.',
+            stroke_min: 'Een lange slag geeft veel koppel bij lage toeren.',
+            stroke_max: 'Een korte slag houdt de motor compact.',
+            stroke_eq: 'Alleen deze krukas past in het motorhuis.',
+            bore_min: 'Brede zuigers vangen meer druk op.',
+            bore_max: 'Smalle zuigers houden de motor slank.',
+            bore_eq: 'De klant heeft nog een doos van deze zuigers liggen.'
+        };
+
+        const LEVELS = [
+            { name: 'Leerling',        band: [6, 30], nReq: 3, slack: 0.18, time: 240, base: 150 },
+            { name: 'Monteur',         band: [3, 10], nReq: 3, slack: 0.10, time: 210, base: 250 },
+            { name: 'Meester-monteur', band: [1, 4],  nReq: 4, slack: 0.04, time: 180, base: 375 }
+        ];
+        const levelFor = (done) => Math.min(3, 1 + Math.floor(done / 3));
+
+        function catValues(key) { return optionsData[KEY_INFO[key].cat].map(o => o.val); }
+
+        function makeReq(key, st, level) {
+            const v = st[key];
+            if (['cc', 'torque', 'power'].includes(key)) {
+                const minBias = key === 'cc' ? 0.35 : 0.75;
+                const op = Math.random() < minBias ? 'min' : 'max';
+                const step = { cc: 50, torque: 5, power: 1 }[key];
+                const slack = LEVELS[level - 1].slack;
+                const rv = roundK(key, v);
+                let value = op === 'min' ? Math.floor(rv * (1 - slack) / step) * step
+                                         : Math.ceil(rv * (1 + slack) / step) * step;
+                if (value < step) value = step;
+                return { key, op, value };
             }
+            const vals = catValues(key);
+            let op = rand(key === 'rpm' ? ['eq', 'min', 'max'] : ['eq', 'min', 'max', 'min', 'max']);
+            if (op === 'min' && v === Math.min(...vals)) op = 'eq';
+            if (op === 'max' && v === Math.max(...vals)) op = 'eq';
+            return { key, op, value: v };
+        }
+        function reqCheck(r, st) {
+            const v = st[r.key];
+            if (v == null) return null;
+            const rv = roundK(r.key, v);
+            if (r.op === 'eq') return rv === r.value;
+            if (r.op === 'min') return rv >= r.value;
+            return rv <= r.value;
+        }
+        function countSolutions(reqs) { return ALL.filter(st => reqs.every(r => reqCheck(r, st))).length; }
 
-            // Requirement 3
-            if (Math.random() > 0.5) {
-                reqs.push({ id: 'rpm', label: `Toerental max ${e.val} RPM`, check: (s) => s.isComplete && s.rpm <= e.val });
-            } else {
-                reqs.push({ id: 'str', label: `Slaglengte min. ${c.val}mm`, check: (s) => s.isComplete && s.stroke >= c.val });
+        function reqLabel(r) {
+            const k = KEY_INFO[r.key];
+            if (r.key === 'cyl') {
+                const c = r.value === 1 ? 'cilinder' : 'cilinders';
+                return { eq: `Precies ${r.value} ${c}`, min: `Minimaal ${r.value} ${c}`, max: `Maximaal ${r.value} ${c}` }[r.op];
             }
+            const pre = { eq: 'Precies', min: 'Min.', max: 'Max.' }[r.op];
+            return `${pre} ${fmt(r.value, r.key === 'power' ? 0 : 0)} ${k.unit} ${k.word}`;
+        }
+        const opSym = (op) => ({ eq: '=', min: '≥', max: '≤' }[op]);
 
-            let title = "Stadsauto Aandrijving";
-            let desc = "Ontwerp een compacte motor die precies voldoet aan de eisen.";
-            if (e.val >= 3000) { title = "Race-Motor Project"; desc = "Focus op hoeksnelheid en vermogen opbouwen."; }
-            else if (b.val >= 4) { title = "Zwaar Transport Motor"; desc = "Veel koppel en een groter volume zijn cruciaal."; }
+        let missionCounter = 1;
+        function generateContract(level, avoid = []) {
+            const L = LEVELS[level - 1];
+            let best = null;
+            for (let attempt = 0; attempt < 400; attempt++) {
+                const target = rand(ALL);
+                let fitting = CLIENTS.filter(c => c.fits(target));
+                if (attempt < 300) fitting = fitting.filter(c => !avoid.includes(c.name));
+                const client = fitting.length ? rand(fitting) : GENERIC_CLIENT;
 
+                // Kies eisen: eerst wat deze klant belangrijk vindt, dan aanvullen
+                const keys = [];
+                shuffle(client.focus).forEach(k => { if (keys.length < L.nReq - 1 && Math.random() < 0.85) keys.push(k); });
+                shuffle(Object.keys(KEY_INFO)).forEach(k => { if (keys.length < L.nReq && !keys.includes(k)) keys.push(k); });
+                if (!keys.some(k => ['cc', 'torque', 'power'].includes(k))) continue;
+
+                const reqs = keys.map(k => makeReq(k, target, level));
+                if (reqs.some(r => countSolutions([r]) === ALL.length)) continue; // eis die altijd klopt = saai
+                const sol = countSolutions(reqs);
+                const cand = { client, reqs, sol };
+                if (sol >= L.band[0] && sol <= L.band[1]) { best = cand; break; }
+                if (!best || Math.abs(sol - L.band[0]) < Math.abs(best.sol - L.band[0])) best = cand;
+            }
+            const { client, reqs, sol } = best;
+            reqs.forEach(r => { r.reason = (REASONS[`${r.key}_${r.op}`] || '').replace('{v}', client.vehicle); });
             return {
-                id: 'm_' + Math.random(),
-                level: `Contract ${String(missionCounter++).padStart(2, '0')}`,
-                title: title,
-                desc: desc,
-                time: 210,
-                score: Math.floor(stats.power + stats.torque + 150),
-                reqs: reqs
+                id: 'm' + missionCounter,
+                number: missionCounter++,
+                level,
+                client,
+                title: client.name,
+                vehicle: client.vehicle,
+                story: rand(client.intro),
+                reqs,
+                solutions: sol,
+                time: L.time,
+                reward: L.base + reqs.length * 25,
+                isNew: false
             };
         }
 
-        function initMissions() {
+        // =====================================================================
+        //  STAAT
+        // =====================================================================
+        let missions = [];
+        let currentMission = null;
+        let totalScore = store.get('score', 0);
+        let completedCount = store.get('done', 0);
+        let timerInterval = null;
+        let timeLeft = 0;
+        let timerPaused = false;
+        let isCompleted = false;
+        let justCompletedId = null;
+        let selectedConfig = { block: null, crank: null, piston: null, ecu: null };
+        let livePhysics = calc();
+        let lastReqStatus = [];
+
+        // =====================================================================
+        //  INIT
+        // =====================================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('global-score').innerText = totalScore;
+            icons();
+            renderMath(document.body);
+            initMissions(true);
+            updateRank();
+            startEngineCanvasLoop();
+            if (!store.get('tutSeen', false)) setTimeout(() => startTutorial(), 900);
+        });
+
+        // =====================================================================
+        //  CONTRACTENBORD
+        // =====================================================================
+        function initMissions(animate) {
+            const lvl = levelFor(completedCount);
             missions = [];
-            for (let i = 0; i < 4; i++) missions.push(generateRandomMission());
-            renderMissionGrid();
+            for (let i = 0; i < 4; i++) missions.push(generateContract(lvl, missions.map(m => m.client.name)));
+            renderMissionGrid(animate);
+        }
+        function refreshMissions() { initMissions(true); }
+
+        function updateRank() {
+            const lvl = levelFor(completedCount);
+            document.getElementById('rank-badge').innerText = `Niveau ${lvl} · ${LEVELS[lvl - 1].name}`;
+            if (lvl < 3) {
+                const needed = lvl * 3 - completedCount;
+                document.getElementById('rank-progress').style.width = `${((completedCount % 3) / 3) * 100}%`;
+                document.getElementById('rank-text').innerText = `Nog ${needed} contract${needed === 1 ? '' : 'en'} tot ${LEVELS[lvl].name}`;
+            } else {
+                document.getElementById('rank-progress').style.width = '100%';
+                document.getElementById('rank-text').innerText = `${completedCount} contracten voltooid · hoogste niveau!`;
+            }
         }
 
-        function refreshMissions() {
-            initMissions();
-        }
-
-        function renderMissionGrid() {
-            const grid = document.getElementById('mission-grid');
-            grid.innerHTML = '';
-            missions.forEach(m => {
-                const card = document.createElement('div');
-                card.className = 'bg-slate-900 border border-slate-800 p-5 rounded-3xl flex flex-col justify-between gap-4 hover:border-slate-700 transition shadow-lg group';
-                card.innerHTML = `
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg">${m.level}</span>
-                            <span class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${Math.floor(m.time/60)}m</span>
-                        </div>
-                        <h3 class="font-bold text-white text-lg group-hover:text-blue-400 transition">${m.title}</h3>
-                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">${m.desc}</p>
-                        <div class="mt-4 space-y-1.5 border-t border-slate-800/80 pt-3">
-                            ${m.reqs.map(r => `<div class="text-xs text-slate-300 flex items-center gap-2"><i data-lucide="target" class="w-3.5 h-3.5 text-blue-400"></i> ${r.label}</div>`).join('')}
+        function buildCard(m) {
+            const card = document.createElement('div');
+            card.dataset.id = m.id;
+            card.className = 'mission-card relative bg-slate-900 border border-slate-800 p-5 rounded-3xl flex flex-col justify-between gap-4 hover:border-slate-700 transition-colors shadow-lg group';
+            const stars = '★'.repeat(m.level) + '☆'.repeat(3 - m.level);
+            card.innerHTML = `
+                ${m.isNew ? '<span class="absolute -top-2 -right-2 text-[10px] font-extrabold bg-blue-500 text-white px-2 py-1 rounded-lg shadow-lg">NIEUW</span>' : ''}
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-lg">Contract ${String(m.number).padStart(2, '0')}</span>
+                        <span class="text-xs text-amber-400 tracking-wider" title="Moeilijkheid">${stars}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl shrink-0">${m.client.emoji}</div>
+                        <div class="min-w-0">
+                            <h3 class="font-bold text-white leading-tight group-hover:text-blue-400 transition">${m.title}</h3>
+                            <p class="text-[11px] text-slate-400">Motor voor een ${m.vehicle}</p>
                         </div>
                     </div>
+                    <p class="story text-xs text-slate-300 mt-3 leading-relaxed min-h-[3rem]">${m.isNew ? '' : m.story}</p>
+                    <div class="mt-3 space-y-1.5 border-t border-slate-800/80 pt-3">
+                        ${m.reqs.map(r => `<div class="text-xs text-slate-300 flex items-center gap-2"><i data-lucide="target" class="w-3.5 h-3.5 text-blue-400 shrink-0"></i> ${reqLabel(r)}</div>`).join('')}
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between text-xs text-slate-400">
+                        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ${Math.floor(m.time / 60)}:${String(m.time % 60).padStart(2, '0')} min</span>
+                        <span class="flex items-center gap-1 text-amber-400 font-semibold"><i data-lucide="coins" class="w-3.5 h-3.5"></i> ${m.reward} pt + tijdbonus</span>
+                    </div>
                     <button onclick="startMission('${m.id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-4 rounded-2xl transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 text-sm">
-                        <span>Start op Lege Werkbank</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        <span>Accepteer contract</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
-                `;
-                grid.appendChild(card);
-            });
-            if (window.lucide) lucide.createIcons();
+                </div>`;
+            return card;
         }
 
+        function typeText(el, text, speed = 16) {
+            if (!el) return;
+            el.textContent = '';
+            el.classList.add('typing');
+            let i = 0;
+            const t = setInterval(() => {
+                el.textContent = text.slice(0, ++i);
+                if (i >= text.length) { clearInterval(t); el.classList.remove('typing'); }
+            }, speed);
+        }
+
+        function renderMissionGrid(animate) {
+            const grid = document.getElementById('mission-grid');
+            grid.innerHTML = '';
+            missions.forEach((m, i) => {
+                const card = buildCard(m);
+                if (animate) { card.style.animationDelay = `${i * 90}ms`; card.classList.add('anim-fly-in'); }
+                grid.appendChild(card);
+            });
+            icons();
+        }
+
+        // Na een gewonnen contract: stempel -> wegschuiven -> nieuw contract binnen laten vliegen
+        function replaceCompletedContract() {
+            const idx = missions.findIndex(m => m.id === justCompletedId);
+            justCompletedId = null;
+            if (idx === -1) return;
+            const grid = document.getElementById('mission-grid');
+            const oldCard = grid.children[idx];
+            if (!oldCard) return;
+
+            const stamp = document.createElement('div');
+            stamp.className = 'stamp';
+            stamp.textContent = 'VOLTOOID ✓';
+            oldCard.appendChild(stamp);
+            oldCard.querySelector('button').disabled = true;
+
+            setTimeout(() => oldCard.classList.add('anim-slide-out'), 1100);
+            setTimeout(() => {
+                // "binnenkomend" skelet
+                const sk = document.createElement('div');
+                sk.className = 'bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-lg space-y-3 anim-fly-in';
+                sk.innerHTML = `
+                    <div class="text-xs text-blue-300 font-semibold flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4"></i> Nieuwe opdracht binnenkomend...</div>
+                    <div class="skeleton h-10 rounded-2xl"></div>
+                    <div class="skeleton h-3 rounded"></div><div class="skeleton h-3 rounded w-4/5"></div>
+                    <div class="skeleton h-3 rounded w-3/5"></div><div class="skeleton h-9 rounded-2xl mt-6"></div>`;
+                grid.replaceChild(sk, oldCard);
+                icons();
+
+                setTimeout(() => {
+                    const newM = generateContract(levelFor(completedCount), missions.map(m => m.client.name));
+                    newM.isNew = true;
+                    missions[idx] = newM;
+                    const card = buildCard(newM);
+                    card.classList.add('anim-fly-in', 'new-glow');
+                    grid.replaceChild(card, sk);
+                    icons();
+                    typeText(card.querySelector('.story'), newM.story);
+                    newM.isNew = false;
+                }, 900);
+            }, 1550);
+        }
+
+        // =====================================================================
+        //  MISSIE STARTEN / STOPPEN
+        // =====================================================================
         function startMission(id) {
             currentMission = missions.find(x => x.id === id);
             if (!currentMission) return;
+            if (tut.active && tut.steps === TUT_BOARD) endTutorial(true);
 
             isCompleted = false;
-
-            // RESET TO EMPTY WORKBENCH EVERY TIME!
-            selectedConfig = {
-                block: null,
-                crank: null,
-                piston: null,
-                ecu: null
-            };
+            selectedConfig = { block: null, crank: null, piston: null, ecu: null };
+            partAnim.block = partAnim.crank = partAnim.piston = partAnim.ecu = 0;
+            lastReqStatus = [];
+            celebrateUntil = 0;
 
             document.getElementById('screen-mission-select').classList.add('hidden');
             document.getElementById('screen-workbench').classList.remove('hidden');
+            window.scrollTo({ top: 0 });
 
-            document.getElementById('active-mission-level').innerText = currentMission.level;
+            document.getElementById('active-mission-level').innerText = `Contract ${String(currentMission.number).padStart(2, '0')} · ${'★'.repeat(currentMission.level)}`;
             document.getElementById('active-mission-title').innerText = currentMission.title;
+            document.getElementById('active-mission-story').innerText = currentMission.story;
+            document.getElementById('active-client-emoji').innerText = currentMission.client.emoji;
+
+            ['stat-cc', 'stat-torque', 'stat-power', 'stat-rpm'].forEach(id => { const el = document.getElementById(id); el.dataset.val = ''; });
 
             renderOptionCards();
             renderRequirements();
             updateEngineState();
 
-            // Timer
             timeLeft = currentMission.time;
+            timerPaused = false;
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(() => {
+                if (timerPaused || isCompleted) return;
                 timeLeft--;
                 updateTimerDisplay();
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
-                    if (!isCompleted) openModal('fail');
+                    if (!isCompleted) showFail();
                 }
             }, 1000);
             updateTimerDisplay();
+
+            if (tutPendingBench) { tutPendingBench = false; setTimeout(() => startTutorial(), 400); }
+        }
+
+        function retryMission() {
+            document.getElementById('modal-fail').classList.add('hidden');
+            startMission(currentMission.id);
         }
 
         function abortMission() {
             if (timerInterval) clearInterval(timerInterval);
+            if (tut.active) endTutorial();
             document.getElementById('screen-workbench').classList.add('hidden');
             document.getElementById('screen-mission-select').classList.remove('hidden');
-            renderMissionGrid();
+            renderMissionGrid(false);
+            updateRank();
         }
 
         function updateTimerDisplay() {
             const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
-            const sec = String(timeLeft % 60).padStart(2, '0');
-            document.getElementById('timer-display').innerText = `${min}:${sec}`;
+            const sec = String(Math.max(0, timeLeft) % 60).padStart(2, '0');
+            const el = document.getElementById('timer-display');
+            el.innerText = `${min}:${sec}`;
+            el.classList.toggle('timer-danger', timeLeft <= 30 && !isCompleted);
         }
 
-        function renderOptionCards() {
-            const categories = ['block', 'crank', 'piston', 'ecu'];
-            
-            categories.forEach(cat => {
+        // =====================================================================
+        //  ONDERDELEN KIEZEN
+        // =====================================================================
+        function renderOptionCards(popCat, popId) {
+            ['block', 'crank', 'piston', 'ecu'].forEach(cat => {
                 const container = document.getElementById(`options-${cat}`);
                 container.innerHTML = '';
-
                 optionsData[cat].forEach(opt => {
                     const isSelected = selectedConfig[cat] === opt.id;
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = `choice-card text-left p-3 rounded-2xl border ${isSelected ? 'selected border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'}`;
                     btn.onclick = () => selectOption(cat, opt.id);
-                    btn.innerHTML = `
-                        <div class="font-bold text-xs text-white">${opt.name}</div>
-                        <div class="text-[10px] text-slate-400 mt-0.5">${opt.desc}</div>
-                    `;
+                    btn.innerHTML = `<div class="font-bold text-xs text-white">${opt.name}</div><div class="text-[10px] text-slate-400 mt-0.5">${opt.desc}</div>`;
+                    if (cat === popCat && opt.id === popId) btn.classList.add('anim-pop');
                     container.appendChild(btn);
                 });
-
-                // Update badge colors
                 const badge = document.getElementById(`step-badge-${cat}`);
-                if (badge) {
-                    if (selectedConfig[cat]) {
-                        badge.className = 'step-badge w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs flex items-center justify-center font-bold border border-emerald-500/30';
-                    } else {
-                        badge.className = 'step-badge w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold';
-                    }
+                if (selectedConfig[cat]) {
+                    badge.className = 'step-badge w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs flex items-center justify-center font-bold border border-emerald-500/30';
+                    badge.innerText = '✓';
+                } else {
+                    badge.className = 'step-badge w-6 h-6 rounded-full bg-slate-800 text-slate-400 text-xs flex items-center justify-center font-bold';
+                    badge.innerText = { block: 1, crank: 2, piston: 3, ecu: 4 }[cat];
                 }
             });
         }
 
         function selectOption(category, optionId) {
+            if (isCompleted) return;
+            if (selectedConfig[category] !== optionId) partAnim[category] = performance.now();
             selectedConfig[category] = optionId;
-            renderOptionCards();
+            renderOptionCards(category, optionId);
             updateEngineState();
         }
+
+        function currentValues() {
+            const get = (cat) => { const o = optionsData[cat].find(x => x.id === selectedConfig[cat]); return o ? o.val : null; };
+            return { n: get('block'), s: get('crank'), d: get('piston'), rpm: get('ecu') };
+        }
+
+        // =====================================================================
+        //  EISEN + HINTS
+        // =====================================================================
+        const TIPS = {
+            power:  { up: 'Vermogen is $P = M \\cdot \\omega$. Je kunt het koppel verhogen (meer cilinders, bredere zuiger of langere krukas) óf het toerental verhogen met de ECU.',
+                      down: 'Vermogen is $P = M \\cdot \\omega$. Verlaag het toerental met de ECU, of maak het koppel kleiner (minder cilinders, smallere zuiger of kortere krukas).' },
+            torque: { up: 'Koppel komt van de kracht op de zuigers ($F = p \\cdot A$) en de hefboom ($r = s/2$). Kies meer cilinders, een bredere zuiger of een langere krukas. Het toerental verandert het koppel níet!',
+                      down: 'Maak $F$ of $r$ kleiner: minder cilinders, een smallere zuiger of een kortere krukas. Het toerental verandert het koppel níet.' },
+            cc:     { up: 'Slagvolume $V_s = A \\cdot s \\cdot n$. Kies meer cilinders, een bredere zuiger of een langere krukas.',
+                      down: 'Slagvolume $V_s = A \\cdot s \\cdot n$. Kies minder cilinders, een smallere zuiger of een kortere krukas.' },
+            rpm:    { up: 'Kies een snellere ECU-afstelling.', down: 'Kies een rustigere ECU-afstelling.' },
+            cyl:    { up: 'Kies een cilinderblok met meer cilinders.', down: 'Kies een cilinderblok met minder cilinders.' },
+            stroke: { up: 'Kies een langere krukas.', down: 'Kies een kortere krukas.' },
+            bore:   { up: 'Kies bredere zuigers.', down: 'Kies smallere zuigers.' }
+        };
 
         function renderRequirements() {
             const container = document.getElementById('mission-requirements');
             container.innerHTML = '';
-            currentMission.reqs.forEach(r => {
+            currentMission.reqs.forEach((r, i) => {
                 const div = document.createElement('div');
-                div.className = 'bg-slate-950 p-3 rounded-2xl border border-slate-800/80 flex flex-col justify-between';
+                div.id = `req-${i}`;
+                div.className = 'bg-slate-950 p-3 rounded-2xl border border-slate-800/80 flex flex-col gap-1.5 transition-colors';
                 div.innerHTML = `
-                    <span class="text-xs text-slate-300 font-medium">${r.label}</span>
-                    <span id="req-status-${r.id}" class="text-xs font-bold text-slate-500 mt-1">Incompleet ⚪</span>
-                `;
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-sm text-white font-semibold">${reqLabel(r)}</span>
+                        <span id="req-status-${i}" class="text-[11px] font-bold text-slate-500 whitespace-nowrap">Wacht ⚪</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 italic leading-snug">"${r.reason}"</p>
+                    <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden"><div id="req-bar-${i}" class="prog-fill h-full rounded-full bg-slate-600" style="width:0%"></div></div>
+                    <div id="req-cmp-${i}" class="text-[11px] text-slate-400"></div>
+                    <button id="req-tipbtn-${i}" onclick="toggleTip(${i})" class="hidden self-start text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                        <i data-lucide="lightbulb" class="w-3 h-3"></i> Tip
+                    </button>
+                    <div id="req-tip-${i}" class="hidden text-[11px] text-amber-100/90 bg-amber-500/5 border border-amber-500/20 rounded-xl p-2 leading-relaxed"></div>`;
                 container.appendChild(div);
             });
+            icons();
         }
 
-        function updateEngineState() {
-            const b = optionsData.block.find(x => x.id === selectedConfig.block);
-            const c = optionsData.crank.find(x => x.id === selectedConfig.crank);
-            const p = optionsData.piston.find(x => x.id === selectedConfig.piston);
-            const e = optionsData.ecu.find(x => x.id === selectedConfig.ecu);
-
-            livePhysics = calculatePhysics(
-                b ? b.val : null,
-                c ? c.val : null,
-                p ? p.val : null,
-                e ? e.val : null
-            );
-
-            // Update UI stats
-            document.getElementById('stat-cc').innerText = b && p && c ? `${livePhysics.cc} cc` : '-- cc';
-            document.getElementById('stat-torque').innerText = b && c && p ? `${Math.round(livePhysics.torque)} Nm` : '-- Nm';
-            document.getElementById('stat-power').innerText = livePhysics.isComplete ? `${livePhysics.power.toFixed(1)} kW` : '-- kW';
-            document.getElementById('stat-rpm').innerText = e ? `${livePhysics.rpm} RPM` : '-- RPM';
-
-            // Status Badge
-            const statusBadge = document.getElementById('engine-status-badge');
-            if (livePhysics.isComplete) {
-                statusBadge.innerText = "Motor Actief & Draaiend";
-                statusBadge.className = "text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20 animate-pulse";
-            } else {
-                statusBadge.innerText = "In Opbouw...";
-                statusBadge.className = "text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20";
-            }
-
-            // Dynamic Explanation
-            const expl = document.getElementById('physics-explanation');
-            let textHtml = '';
-
-            if (!b) {
-                textHtml += `<p class="text-amber-400 font-medium">Stap 1: Kies een cilinderblok om de basis van de motor op te stellen.</p>`;
-            } else {
-                textHtml += `<p>• <strong>Cilinderblok (${b.name}):</strong> Het blok staat op de werkbank. Dit biedt plaats aan ${b.val} cilinders.</p>`;
-            }
-
-            if (!c) {
-                textHtml += `<p class="text-amber-400 font-medium">Stap 2: Kies een krukas om de hefboomarm te bepalen.</p>`;
-            } else {
-                textHtml += `<p>• <strong>Krukas (${c.name}):</strong> Slaglengte van ${c.val}mm bepaalt de hefboom $r$. Een langere hefboom vergroot de draaikracht/koppel ($M = F \cdot r$).</p>`;
-            }
-
-            if (!p) {
-                textHtml += `<p class="text-amber-400 font-medium">Stap 3: Kies zuigers om de verbrandingsruimte af te sluiten.</p>`;
-            } else {
-                textHtml += `<p>• <strong>Zuigers (${p.name}):</strong> Boring $d = ${p.val}\text{ mm}$. Het zuigeroppervlak $A = \pi(d/2)^2$ bepaalt hoeveel kracht $F$ op de krukas duwt.</p>`;
-            }
-
-            if (!e) {
-                textHtml += `<p class="text-amber-400 font-medium">Stap 4: Selecteer een ECU om de motor te starten en toeren te laten maken!</p>`;
-            } else {
-                textHtml += `<p>• <strong>ECU (${e.name}):</strong> Regelt het toerental (${e.val} RPM). Dit geeft de hoeksnelheid $\omega = ${livePhysics.omega.toFixed(1)}\text{ rad/s}$. Samen met koppel bepaalt dit het vermogen ($P = M \cdot \omega$).</p>`;
-            }
-
-            expl.innerHTML = textHtml;
-
-            checkRequirements();
+        function toggleTip(i) {
+            const tip = document.getElementById(`req-tip-${i}`);
+            tip.classList.toggle('hidden');
+            if (!tip.classList.contains('hidden')) replayAnim(tip, 'anim-pop');
         }
 
         function checkRequirements() {
             if (!currentMission) return;
-            let allPassed = true;
+            const st = livePhysics;
+            let allPassed = st.isComplete;
 
-            currentMission.reqs.forEach(r => {
-                const statusSpan = document.getElementById(`req-status-${r.id}`);
-                if (!statusSpan) return;
+            currentMission.reqs.forEach((r, i) => {
+                const k = KEY_INFO[r.key];
+                const status = reqCheck(r, st);
+                const span = document.getElementById(`req-status-${i}`);
+                const bar = document.getElementById(`req-bar-${i}`);
+                const cmp = document.getElementById(`req-cmp-${i}`);
+                const tipBtn = document.getElementById(`req-tipbtn-${i}`);
+                const tip = document.getElementById(`req-tip-${i}`);
+                const card = document.getElementById(`req-${i}`);
+                const target = `${opSym(r.op)} ${fmt(r.value)} ${k.unit}`.trim();
 
-                if (!livePhysics.isComplete) {
-                    statusSpan.innerText = 'Incompleet ⚪';
-                    statusSpan.className = 'text-xs font-bold text-slate-500 mt-1';
+                if (status === null) {
+                    const missing = k.needs.filter(c => !selectedConfig[c]).map(c => PART_NAMES[c]);
+                    span.innerText = 'Wacht ⚪';
+                    span.className = 'text-[11px] font-bold text-slate-500 whitespace-nowrap';
+                    bar.style.width = '0%';
+                    cmp.innerHTML = `Doel: <b class="text-slate-300">${target}</b> · kies nog: ${missing.join(', ')}`;
+                    tipBtn.classList.add('hidden'); tip.classList.add('hidden');
+                    card.style.borderColor = '';
                     allPassed = false;
                 } else {
-                    const passed = r.check(livePhysics);
-                    if (passed) {
-                        statusSpan.innerText = 'Voldaan ✓';
-                        statusSpan.className = 'text-xs font-bold text-emerald-400 mt-1';
+                    const v = roundK(r.key, st[r.key]);
+                    const shown = `${fmt(v, k.dec)} ${k.unit}`.trim();
+                    let frac;
+                    if (r.op === 'min') frac = clamp(v / r.value, 0, 1);
+                    else if (r.op === 'max') frac = v <= r.value ? 1 : clamp(r.value / v, 0, 1);
+                    else frac = v === r.value ? 1 : clamp(Math.min(v, r.value) / Math.max(v, r.value), 0, 1);
+                    bar.style.width = `${Math.round(frac * 100)}%`;
+
+                    if (status) {
+                        span.innerText = 'Voldaan ✓';
+                        span.className = 'text-[11px] font-bold text-emerald-400 whitespace-nowrap';
+                        bar.className = 'prog-fill h-full rounded-full bg-emerald-500';
+                        cmp.innerHTML = `Jij: <b class="text-emerald-300">${shown}</b> · Doel: ${target}`;
+                        tipBtn.classList.add('hidden'); tip.classList.add('hidden');
+                        card.style.borderColor = 'rgba(16,185,129,.4)';
                     } else {
-                        statusSpan.innerText = 'Niet voldaan ✗';
-                        statusSpan.className = 'text-xs font-bold text-red-400 mt-1';
                         allPassed = false;
+                        const dir = (r.op === 'min' || (r.op === 'eq' && v < r.value)) ? 'up' : 'down';
+                        const diff = Math.abs(v - r.value);
+                        const word = dir === 'up' ? 'te weinig' : 'te veel';
+                        span.innerText = 'Niet voldaan ✗';
+                        span.className = 'text-[11px] font-bold text-red-400 whitespace-nowrap';
+                        bar.className = 'prog-fill h-full rounded-full bg-red-500';
+                        cmp.innerHTML = `Jij: <b class="text-red-300">${shown}</b> · Doel: ${target} · <span class="text-red-300">${fmt(diff, k.dec)} ${k.unit} ${word}</span>`;
+                        tipBtn.classList.remove('hidden');
+                        tip.innerHTML = TIPS[r.key][dir];
+                        renderMath(tip);
+                        card.style.borderColor = 'rgba(248,113,113,.35)';
                     }
                 }
+                if (lastReqStatus[i] !== undefined && lastReqStatus[i] !== status) {
+                    if (status === true) replayAnim(card, 'anim-pop');
+                    if (status === false) replayAnim(card, 'anim-shake');
+                }
+                lastReqStatus[i] = status;
             });
 
-            if (allPassed && !isCompleted) {
-                isCompleted = true;
-                if (timerInterval) clearInterval(timerInterval);
+            if (allPassed && !isCompleted) missionSuccess();
+        }
+
+        // =====================================================================
+        //  MOTOR STATUS, METERS & LIVE BEREKENING
+        // =====================================================================
+        function animateNumber(el, to, dec, unit) {
+            const from = el.dataset.val === '' || el.dataset.val === undefined ? 0 : parseFloat(el.dataset.val);
+            el.dataset.val = to;
+            const t0 = performance.now(), dur = 450;
+            const step = (now) => {
+                const p = clamp((now - t0) / dur, 0, 1);
+                const e = 1 - Math.pow(1 - p, 3);
+                el.innerText = `${fmt(from + (to - from) * e, dec)} ${unit}`;
+                if (p < 1) requestAnimationFrame(step);
+            };
+            if (from !== to) { requestAnimationFrame(step); replayAnim(el, 'anim-pop'); }
+            else el.innerText = `${fmt(to, dec)} ${unit}`;
+        }
+        function setStat(id, val, dec, unit, color) {
+            const el = document.getElementById(id);
+            if (val == null) { el.dataset.val = ''; el.innerText = `-- ${unit}`; el.className = 'text-lg font-bold text-slate-500'; return; }
+            el.className = `text-lg font-bold ${color} inline-block`;
+            animateNumber(el, roundK({ 'stat-cc': 'cc', 'stat-torque': 'torque', 'stat-power': 'power', 'stat-rpm': 'rpm' }[id], val), dec, unit);
+        }
+
+        function updateEngineState() {
+            const v = currentValues();
+            livePhysics = calc(v.n, v.s, v.d, v.rpm);
+            const st = livePhysics;
+
+            setStat('stat-cc', st.cc, 0, 'cc', 'text-sky-300');
+            setStat('stat-torque', st.torque, 0, 'Nm', 'text-amber-300');
+            setStat('stat-power', st.power, 1, 'kW', 'text-emerald-300');
+            setStat('stat-rpm', st.rpm, 0, 'RPM', 'text-violet-300');
+
+            const badge = document.getElementById('engine-status-badge');
+            const legend = document.getElementById('stroke-legend');
+            const running = !!(v.n && v.s && v.d && v.rpm);
+            legend.classList.toggle('hidden', !running);
+            legend.classList.toggle('flex', running);
+            if (running) {
+                badge.innerText = 'Motor draait';
+                badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20 animate-pulse';
+            } else if (!v.n && !v.s && !v.d && !v.rpm) {
+                badge.innerText = 'Lege werkbank';
+                badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 font-semibold border border-slate-700';
+            } else {
+                badge.innerText = 'In opbouw...';
+                badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-semibold border border-amber-500/20';
+            }
+
+            renderCalc(v, st);
+            checkRequirements();
+        }
+
+        function renderCalc(v, st) {
+            const has = (...cats) => cats.every(c => selectedConfig[c]);
+            const miss = (...cats) => cats.filter(c => !selectedConfig[c]).map(c => PART_NAMES[c]).join(' + ');
+            const lines = [
+                { color: 'text-sky-300', cap: 'Oppervlak van één zuiger', cats: ['piston'],
+                  base: String.raw`A = \pi \cdot \left(\tfrac{d}{2}\right)^2`,
+                  full: () => String.raw`A = \pi \cdot \left(\tfrac{${tx(v.d / 1000, 3)}}{2}\right)^2 = ${sci(st.A)}\ \text{m}^2` },
+                { color: 'text-sky-300', cap: 'Slagvolume van de hele motor (1 cc = 10⁻⁶ m³)', cats: ['block', 'crank', 'piston'],
+                  base: String.raw`V_s = A \cdot s \cdot n`,
+                  full: () => String.raw`V_s = ${sci(st.A)} \cdot ${tx(v.s / 1000, 3)} \cdot ${v.n} = ${sci(st.V)}\ \text{m}^3 = \mathbf{${tx(st.cc)}\ cc}` },
+                { color: 'text-rose-300', cap: 'Kracht van het ontploffende gas op één zuiger (p = 11 bar)', cats: ['piston'],
+                  base: String.raw`F = p \cdot A`,
+                  full: () => String.raw`F = 1{,}1 \cdot 10^{6} \cdot ${sci(st.A)} = ${tx(st.F)}\ \text{N}` },
+                { color: 'text-amber-300', cap: 'Krukarm (hefboom) is de halve slaglengte', cats: ['crank'],
+                  base: String.raw`r = \tfrac{s}{2}`,
+                  full: () => String.raw`r = \tfrac{${tx(v.s / 1000, 3)}}{2} = ${tx(st.r, 4)}\ \text{m}` },
+                { color: 'text-amber-300', cap: 'Gemiddeld koppel: 1 arbeidsslag per 2 omwentelingen per cilinder', cats: ['block', 'crank', 'piston'],
+                  base: String.raw`M = \frac{n \cdot F \cdot r}{2\pi}`,
+                  full: () => String.raw`M = \dfrac{${v.n} \cdot ${tx(st.F)} \cdot ${tx(st.r, 4)}}{2\pi} = \mathbf{${tx(st.torque)}\ Nm}` },
+                { color: 'text-violet-300', cap: 'Hoeksnelheid uit het toerental', cats: ['ecu'],
+                  base: String.raw`\omega = \frac{2\pi \cdot \text{RPM}}{60}`,
+                  full: () => String.raw`\omega = \dfrac{2\pi \cdot ${v.rpm}}{60} = ${tx(st.omega, 1)}\ \text{rad/s}` },
+                { color: 'text-emerald-300', cap: 'Vermogen = koppel × hoeksnelheid', cats: ['block', 'crank', 'piston', 'ecu'],
+                  base: String.raw`P = M \cdot \omega`,
+                  full: () => String.raw`P = ${tx(st.torque, 1)} \cdot ${tx(st.omega, 1)} = ${tx(st.power * 1000)}\ \text{W} = \mathbf{${tx(st.power, 1)}\ kW}` }
+            ];
+            const html = lines.map((l, i) => {
+                const ok = has(...l.cats);
+                return `<div class="${ok ? '' : 'opacity-40'}">
+                    <div class="text-[11px] font-semibold ${ok ? 'text-slate-400' : 'text-slate-500'}">${i + 1}. ${l.cap}${ok ? '' : ` · <span class="font-normal">kies eerst: ${miss(...l.cats)}</span>`}</div>
+                    <div class="${ok ? l.color : 'text-slate-400'} py-0.5">$${ok ? l.full() : l.base}$</div>
+                </div>`;
+            }).join('');
+            const el = document.getElementById('physics-explanation');
+            el.innerHTML = html;
+            renderMath(el);
+        }
+
+        // =====================================================================
+        //  WINNEN / VERLIEZEN
+        // =====================================================================
+        function missionSuccess() {
+            isCompleted = true;
+            if (timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
+            celebrateUntil = performance.now() + 2500;
+            const badge = document.getElementById('engine-status-badge');
+            badge.innerText = 'Alle eisen voldaan! 🎉';
+            badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40';
+
+            const oldLevel = levelFor(completedCount);
+            completedCount++;
+            store.set('done', completedCount);
+            const newLevel = levelFor(completedCount);
+            const bonus = Math.max(0, timeLeft);
+            const total = currentMission.reward + bonus;
+            justCompletedId = currentMission.id;
+            const scoreBefore = totalScore;
+            totalScore += total;
+            store.set('score', totalScore);
+
+            setTimeout(() => {
+                fireConfetti();
+                document.getElementById('win-emoji').innerText = currentMission.client.emoji;
+                document.getElementById('win-quote').innerText = `"${currentMission.client.quote}" — ${currentMission.client.name}`;
+                document.getElementById('win-base').innerText = `+${currentMission.reward}`;
+                document.getElementById('win-bonus').innerText = `+${bonus}`;
+                const lv = document.getElementById('win-levelup');
+                if (newLevel > oldLevel) {
+                    lv.innerHTML = `⭐ Nieuw niveau: <b>${LEVELS[newLevel - 1].name}</b>! De contracten worden lastiger, maar leveren meer op.`;
+                    lv.classList.remove('hidden');
+                } else lv.classList.add('hidden');
+                openModal('win');
+                countUp(document.getElementById('win-score'), total, (n) => `+${n} pt`);
+                setTimeout(() => flyCoins(scoreBefore, total), 700);
+            }, 900);
+        }
+
+        function countUp(el, to, f, dur = 900) {
+            const t0 = performance.now();
+            const step = (now) => {
+                const p = clamp((now - t0) / dur, 0, 1);
+                el.innerText = f(Math.round(to * (1 - Math.pow(1 - p, 3))));
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function flyCoins(startScore, total) {
+            const scoreEl = document.getElementById('global-score');
+            const target = scoreEl.getBoundingClientRect();
+            const src = document.getElementById('win-score').getBoundingClientRect();
+            const coins = 8;
+            for (let i = 0; i < coins; i++) {
+                const c = document.createElement('div');
+                c.className = 'coin';
+                c.textContent = '🪙';
+                c.style.left = (src.left + src.width / 2 + (Math.random() - .5) * 60) + 'px';
+                c.style.top = (src.top + (Math.random() - .5) * 20) + 'px';
+                document.body.appendChild(c);
                 setTimeout(() => {
-                    totalScore += currentMission.score;
-                    document.getElementById('global-score').innerText = totalScore;
-                    document.getElementById('win-score').innerText = `+${currentMission.score} pt`;
-                    openModal('win');
-                }, 400);
+                    const dx = target.left + target.width / 2 - parseFloat(c.style.left);
+                    const dy = target.top + target.height / 2 - parseFloat(c.style.top);
+                    c.style.transform = `translate(${dx}px, ${dy}px) scale(.6)`;
+                    c.style.opacity = '0.2';
+                }, i * 70);
+                setTimeout(() => {
+                    c.remove();
+                    const shown = Math.round(startScore + total * ((i + 1) / coins));
+                    scoreEl.innerText = shown;
+                    replayAnim(scoreEl, 'anim-bump');
+                }, 900 + i * 70);
             }
         }
 
-        // --- ANIMATION CANVAS (LAYERED WORKBENCH BUILD) ---
-        let angle = 0;
-        function startEngineCanvasLoop() {
-            const canvas = document.getElementById('engine-canvas');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-
-            function render() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // 1. Draw Workbench Surface
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(0, canvas.height - 25, canvas.width, 25);
-                ctx.strokeStyle = '#334155';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(0, canvas.height - 25);
-                ctx.lineTo(canvas.width, canvas.height - 25);
-                ctx.stroke();
-
-                // 2. Draw Stand / Mount
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(canvas.width/2 - 120, canvas.height - 35, 240, 10);
-
-                const hasBlock = !!selectedConfig.block;
-                const hasCrank = !!selectedConfig.crank;
-                const hasPiston = !!selectedConfig.piston;
-                const hasECU = !!selectedConfig.ecu;
-
-                if (!hasBlock) {
-                    // Empty Workbench prompt
-                    ctx.fillStyle = '#64748b';
-                    ctx.font = '13px Inter, sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('🔨 De werkbank is leeg. Selecteer een cilinderblok om te beginnen...', canvas.width / 2, canvas.height / 2);
-                    requestAnimationFrame(render);
-                    return;
-                }
-
-                // If ECU is chosen, motor rotates! If not, static 0 RPM.
-                const rpm = hasECU ? (livePhysics.rpm || 300) : 0;
-                angle += (rpm * 0.0012);
-
-                const b = optionsData.block.find(x => x.id === selectedConfig.block);
-                const c = optionsData.crank.find(x => x.id === selectedConfig.crank);
-                const p = optionsData.piston.find(x => x.id === selectedConfig.piston);
-
-                const numCyl = b ? b.val : 2;
-                const strokeVal = c ? c.val : 85;
-                const boreVal = p ? p.val : 80;
-
-                const spacing = canvas.width / (numCyl + 1);
-
-                for (let i = 0; i < numCyl; i++) {
-                    const cx = spacing * (i + 1);
-                    const cy = 40;
-                    const crankRadius = strokeVal * 0.22;
-
-                    // LAYER A: CYLINDER BLOCK
-                    ctx.strokeStyle = '#38bdf8';
-                    ctx.lineWidth = 3;
-                    const boreWidth = boreVal * 0.45;
-                    ctx.strokeRect(cx - boreWidth/2, cy - 10, boreWidth, 90);
-
-                    // LAYER B: CRANKSHAFT
-                    if (hasCrank) {
-                        ctx.fillStyle = '#f59e0b';
-                        ctx.beginPath();
-                        ctx.arc(cx, cy + 95, 12, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // Crank arm pin
-                        const pinX = cx + Math.sin(angle + i) * crankRadius;
-                        const pinY = cy + 95 + Math.cos(angle + i) * crankRadius;
-                        ctx.strokeStyle = '#f59e0b';
-                        ctx.lineWidth = 4;
-                        ctx.beginPath();
-                        ctx.moveTo(cx, cy + 95);
-                        ctx.lineTo(pinX, pinY);
-                        ctx.stroke();
-
-                        // LAYER C: PISTONS & RODS
-                        if (hasPiston) {
-                            const pistonY = cy + Math.cos(angle + (i * Math.PI / numCyl)) * crankRadius + 20;
-
-                            // Rod
-                            ctx.strokeStyle = '#94a3b8';
-                            ctx.lineWidth = 3;
-                            ctx.beginPath();
-                            ctx.moveTo(pinX, pinY);
-                            ctx.lineTo(cx, pistonY + 12);
-                            ctx.stroke();
-
-                            // Piston head
-                            ctx.fillStyle = '#3b82f6';
-                            ctx.fillRect(cx - (boreWidth/2 - 2), pistonY, boreWidth - 4, 18);
-                            
-                            // Piston rings lines
-                            ctx.strokeStyle = '#1d4ed8';
-                            ctx.lineWidth = 1;
-                            ctx.strokeRect(cx - (boreWidth/2 - 2), pistonY + 3, boreWidth - 4, 2);
-
-                            // LAYER D: IGNITION / SPARK (If ECU active)
-                            if (hasECU && Math.sin(angle * 2 + i) > 0.8) {
-                                ctx.fillStyle = '#ef4444';
-                                ctx.beginPath();
-                                ctx.arc(cx, cy - 5, 6, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        }
-                    }
-                }
-
-                requestAnimationFrame(render);
-            }
-            render();
+        function showFail() {
+            const det = document.getElementById('fail-details');
+            det.innerHTML = '<div class="font-bold text-slate-200 mb-1">Zo stond je motor ervoor:</div>' + currentMission.reqs.map(r => {
+                const s = reqCheck(r, livePhysics);
+                const icon = s === true ? '<span class="text-emerald-400">✓</span>' : s === false ? '<span class="text-red-400">✗</span>' : '<span class="text-slate-500">⚪</span>';
+                return `<div>${icon} ${reqLabel(r)}</div>`;
+            }).join('') + '<div class="text-slate-400 mt-2">Tip: kijk bij de rode eisen op het 💡 Tip-knopje en in de live berekening.</div>';
+            openModal('fail');
         }
 
-        // --- MODAL CONTROLS ---
+        // =====================================================================
+        //  MODALS
+        // =====================================================================
         function openModal(type) {
-            document.getElementById(`modal-${type}`).classList.remove('hidden');
+            const m = document.getElementById(`modal-${type}`);
+            m.classList.remove('hidden');
+            replayAnim(m.querySelector('.modal-panel'), 'modal-panel');
+            if (type === 'info') renderMath(m);
+            if (type !== 'win' && type !== 'fail' && currentMission && !isCompleted) timerPaused = true;
         }
 
         function closeModal(type) {
             document.getElementById(`modal-${type}`).classList.add('hidden');
+            if (type === 'part') partModal.active = false;
+            if ((type === 'part' || type === 'info') && !tut.active) timerPaused = false;
             if (type === 'win') {
-                const idx = missions.findIndex(m => m.id === currentMission.id);
-                const nextM = generateRandomMission();
-                if (idx !== -1) missions[idx] = nextM;
-                startMission(nextM.id);
+                abortMission();
+                setTimeout(replaceCompletedContract, 250);
             } else if (type === 'fail') {
                 abortMission();
             }
+        }
+
+        // =====================================================================
+        //  UITLEG PER ONDERDEEL
+        // =====================================================================
+        const PART_INFO = {
+            block: {
+                title: 'Cilinderblok', icon: 'box',
+                what: 'Het cilinderblok is het "huis" van de motor. Hierin zitten de <b>cilinders</b>: holle buizen waarin de zuigers op en neer bewegen. Elke cilinder werkt als een eigen kleine motor.',
+                how: 'Meer cilinders betekent meer zuigers die tegelijk duwen. Het slagvolume en het koppel worden dus <b>evenredig</b> groter: 4 cilinders geven 2× zoveel als 2 cilinders.',
+                formula: '$$V_s = A \\cdot s \\cdot n \\qquad M = \\frac{n \\cdot F \\cdot r}{2\\pi}$$',
+                effects: { 'Slagvolume': '↑', 'Koppel': '↑', 'Vermogen': '↑', 'Toerental': '–' }
+            },
+            crank: {
+                title: 'Krukas', icon: 'cog',
+                what: 'De krukas zet de <b>op-en-neer</b> beweging van de zuigers om in een <b>draaiende</b> beweging, net zoals je benen de pedalen van een fiets rondtrappen.',
+                how: 'De <b>slaglengte</b> $s$ is hoe ver de zuiger op en neer gaat. De krukarm $r$ is de helft daarvan en werkt als hefboom: een langere arm geeft meer koppel ($M = F \\cdot r$) én meer slagvolume.',
+                formula: '$$r = \\frac{s}{2} \\qquad M = F \\cdot r$$',
+                effects: { 'Slagvolume': '↑', 'Koppel': '↑', 'Vermogen': '↑', 'Toerental': '–' }
+            },
+            piston: {
+                title: 'Zuiger', icon: 'circle-dot',
+                what: 'De zuiger is de "stempel" in de cilinder. Als het brandstof-luchtmengsel ontploft, duwt het hete gas met druk $p$ op de bovenkant van de zuiger.',
+                how: 'Een grotere <b>boring</b> $d$ geeft een groter oppervlak $A$, dus een grotere kracht $F = p \\cdot A$. Let op: $d$ staat in het <b>kwadraat</b>, dus een iets bredere zuiger geeft al veel meer oppervlak!',
+                formula: '$$A = \\pi \\cdot \\left(\\frac{d}{2}\\right)^2 \\qquad F = p \\cdot A$$',
+                effects: { 'Slagvolume': '↑', 'Koppel': '↑', 'Vermogen': '↑', 'Toerental': '–' }
+            },
+            ecu: {
+                title: 'ECU (motorcomputer)', icon: 'cpu',
+                what: 'De ECU (Engine Control Unit) is de computer van de motor. Hij bepaalt wanneer er brandstof wordt ingespoten en wanneer de bougie vonkt, en daarmee hoe snel de motor draait: het <b>toerental</b> (omwentelingen per minuut).',
+                how: 'Een hoger toerental geeft een grotere hoeksnelheid $\\omega$ en dus meer <b>vermogen</b> ($P = M \\cdot \\omega$). Het <b>koppel verandert níet</b>: elke arbeidsslag duwt even hard, er zijn er alleen meer per seconde.',
+                formula: '$$\\omega = \\frac{2\\pi \\cdot \\text{RPM}}{60} \\qquad P = M \\cdot \\omega$$',
+                effects: { 'Slagvolume': '–', 'Koppel': '–', 'Vermogen': '↑', 'Toerental': '↑' }
+            }
+        };
+
+        const partModal = { active: false, cat: null, t0: 0 };
+        function openPartInfo(cat) {
+            const info = PART_INFO[cat];
+            document.getElementById('part-title').innerHTML = `<i data-lucide="${info.icon}" class="w-5 h-5 text-blue-400"></i> ${info.title}`;
+            const chips = Object.entries(info.effects).map(([k, e]) => {
+                const col = e === '↑' ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30' : 'text-slate-400 bg-slate-800 border-slate-700';
+                return `<span class="text-xs border rounded-lg px-2 py-1 ${col}">${k} ${e === '↑' ? '↑ groter' : '– geen effect'}</span>`;
+            }).join('');
+            document.getElementById('part-body').innerHTML = `
+                <div><h5 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">Wat is het?</h5><p>${info.what}</p></div>
+                <div><h5 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-1">Wat doet het met je motor?</h5><p>${info.how}</p></div>
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl px-3 py-1 text-slate-200">${info.formula}</div>
+                <div><h5 class="text-xs font-bold uppercase tracking-wider text-blue-400 mb-1.5">Als je deze groter kiest:</h5><div class="flex flex-wrap gap-1.5">${chips}</div></div>`;
+            icons();
+            openModal('part');
+            renderMath(document.getElementById('modal-part'));
+            partModal.active = true; partModal.cat = cat; partModal.t0 = performance.now(); partModal.needle = null; partModal.rot = 0;
+            const cv = document.getElementById('part-canvas');
+            setupHiDPI(cv, 340, 180);
+            requestAnimationFrame(drawPartLoop);
+        }
+
+        function setupHiDPI(cv, W, H) {
+            const dpr = Math.min(2, window.devicePixelRatio || 1);
+            cv.width = W * dpr; cv.height = H * dpr;
+            const ctx = cv.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return ctx;
+        }
+
+        function drawArrow(ctx, x1, y1, x2, y2, color, w = 2) {
+            const a = Math.atan2(y2 - y1, x2 - x1);
+            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w;
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - 7 * Math.cos(a - .4), y2 - 7 * Math.sin(a - .4));
+            ctx.lineTo(x2 - 7 * Math.cos(a + .4), y2 - 7 * Math.sin(a + .4));
+            ctx.closePath(); ctx.fill();
+        }
+
+        // Teken één cilinder met zuiger, drijfstang en krukas (correcte krukdrijfstang-beweging)
+        function drawSingleCylinder(ctx, cx, crankY, r, L, boreW, theta, opts = {}) {
+            const pistonH = 14;
+            const headY = crankY - r - L - pistonH - 8;
+            const pinY = crankY - (r * Math.cos(theta) + Math.sqrt(L * L - Math.pow(r * Math.sin(theta), 2)));
+            const top = pinY - pistonH + 4;
+            // cilinderwand
+            ctx.fillStyle = '#0b1220';
+            ctx.fillRect(cx - boreW / 2, headY, boreW, crankY - headY - r - 4);
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+            ctx.strokeRect(cx - boreW / 2 - 2, headY - 2, boreW + 4, crankY - headY - r);
+            if (opts.gas) { ctx.fillStyle = opts.gas; ctx.fillRect(cx - boreW / 2, headY, boreW, top - headY); }
+            // drijfstang
+            const px = cx + r * Math.sin(theta), py = crankY - r * Math.cos(theta);
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cx, pinY); ctx.stroke();
+            // zuiger
+            ctx.fillStyle = '#3b82f6'; ctx.fillRect(cx - boreW / 2 + 1, top, boreW - 2, pistonH);
+            ctx.fillStyle = '#1d4ed8'; ctx.fillRect(cx - boreW / 2 + 1, top + 3, boreW - 2, 2);
+            // krukas
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath(); ctx.arc(cx, crankY, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 5;
+            ctx.beginPath(); ctx.moveTo(cx, crankY); ctx.lineTo(px, py); ctx.stroke();
+            ctx.fillStyle = '#fde68a'; ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fill();
+            return { headY, top, px, py, pinY };
+        }
+
+        function drawPartLoop(now) {
+            if (!partModal.active) return;
+            const cv = document.getElementById('part-canvas');
+            const ctx = cv.getContext('2d');
+            const W = 340, H = 180, t = (now - partModal.t0) / 1000;
+            ctx.clearRect(0, 0, W, H);
+            ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'center';
+            const v = currentValues();
+
+            if (partModal.cat === 'block') {
+                [1, 2, 4, 6].forEach((n, k) => {
+                    const x0 = 10 + k * 82, w = 74;
+                    const sel = v.n === n;
+                    ctx.fillStyle = sel ? 'rgba(59,130,246,.15)' : 'rgba(30,41,59,.5)';
+                    ctx.strokeStyle = sel ? '#3b82f6' : '#334155'; ctx.lineWidth = sel ? 2 : 1;
+                    ctx.beginPath(); ctx.roundRect(x0, 22, w, 120, 10); ctx.fill(); ctx.stroke();
+                    const sp = (w - 8) / n;
+                    for (let i = 0; i < n; i++) {
+                        const cx = x0 + 4 + sp * (i + .5);
+                        const bw = Math.min(14, sp - 3);
+                        ctx.fillStyle = '#0b1220'; ctx.fillRect(cx - bw / 2, 40, bw, 70);
+                        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1; ctx.strokeRect(cx - bw / 2, 40, bw, 70);
+                        const y = 60 + 20 * Math.cos(t * 5 + i * (4 * Math.PI / n));
+                        ctx.fillStyle = '#3b82f6'; ctx.fillRect(cx - bw / 2 + 1, y, bw - 2, 10);
+                        ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(cx, 124, 3, 0, Math.PI * 2); ctx.fill();
+                    }
+                    ctx.fillStyle = sel ? '#93c5fd' : '#94a3b8';
+                    ctx.fillText(`${n} cilinder${n > 1 ? 's' : ''}`, x0 + w / 2, 158);
+                    ctx.fillStyle = '#64748b'; ctx.fillText(`${n}× kracht`, x0 + w / 2, 172);
+                });
+                ctx.fillStyle = '#cbd5e1'; ctx.fillText('Elke cilinder duwt mee: meer cilinders = meer koppel', W / 2, 13);
+            }
+
+            if (partModal.cat === 'crank') {
+                const s = v.s || 90, r = s * 0.32, L = 62, cx = 110, crankY = 150;
+                const th = t * 2.2;
+                const g = drawSingleCylinder(ctx, cx, crankY, r, L, 54, th);
+                // r-label
+                ctx.setLineDash([3, 3]); ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.arc(cx, crankY, r, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = '#fbbf24'; ctx.textAlign = 'left';
+                ctx.fillText(`r = s/2 = ${fmt(s / 2)} mm`, cx + r + 22, crankY + 4);
+                // slag s
+                const tdc = crankY - r - L - 10, bdc = crankY + r - L - 10;
+                drawArrow(ctx, 160, bdc, 160, tdc, '#60a5fa', 1.5); drawArrow(ctx, 160, tdc, 160, bdc, '#60a5fa', 1.5);
+                ctx.fillStyle = '#60a5fa'; ctx.fillText(`slag s = ${s} mm`, 168, (tdc + bdc) / 2 + 4);
+                // draaipijl
+                ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(cx, crankY, r + 12, -0.8, 0.6); ctx.stroke();
+                ctx.fillStyle = '#34d399'; ctx.fillText('draaiing → koppel M', 230, 40);
+                ctx.fillStyle = '#94a3b8'; ctx.fillText('op & neer → rond', 230, 58);
+                ctx.textAlign = 'center';
+            }
+
+            if (partModal.cat === 'piston') {
+                [75, 85, 95].forEach((d, k) => {
+                    const cx = 60 + k * 110, cy = 82, rr = d * 0.42;
+                    const sel = v.d === d;
+                    const pulse = 1 + 0.05 * Math.sin(t * 6);
+                    ctx.fillStyle = sel ? 'rgba(59,130,246,.35)' : 'rgba(59,130,246,.18)';
+                    ctx.strokeStyle = sel ? '#93c5fd' : '#3b82f6'; ctx.lineWidth = sel ? 3 : 2;
+                    ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    // drukpijlen naar binnen
+                    for (let a = 0; a < 8; a++) {
+                        const ang = a * Math.PI / 4 + t * 0.3;
+                        const r1 = rr + 16 * pulse, r2 = rr + 4;
+                        drawArrow(ctx, cx + r1 * Math.cos(ang), cy + r1 * Math.sin(ang), cx + r2 * Math.cos(ang), cy + r2 * Math.sin(ang), 'rgba(251,146,60,.8)', 1.5);
+                    }
+                    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(cx - rr, cy); ctx.lineTo(cx + rr, cy); ctx.stroke();
+                    const A = Math.PI * Math.pow(d / 20, 2);
+                    ctx.fillStyle = sel ? '#bfdbfe' : '#cbd5e1';
+                    ctx.fillText(`d = ${d} mm`, cx, cy - 4);
+                    ctx.fillText(`A = ${fmt(A)} cm²`, cx, 150);
+                    ctx.fillStyle = '#fb923c'; ctx.fillText(`F ≈ ${fmt(P_MEAN * A / 1e4 / 1000, 1)} kN`, cx, 166);
+                });
+                ctx.fillStyle = '#94a3b8'; ctx.fillText('Bovenaanzicht: gasdruk p duwt op het oppervlak A', W / 2, 13);
+            }
+
+            if (partModal.cat === 'ecu') {
+                const cx = 120, cy = 130, R = 85;
+                ctx.lineWidth = 10; ctx.lineCap = 'butt';
+                const zones = [[0, 1200, '#38bdf8'], [1200, 2500, '#a78bfa'], [2500, 4000, '#fb923c'], [4000, 5000, '#ef4444']];
+                zones.forEach(([a, b, c]) => {
+                    ctx.strokeStyle = c;
+                    ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI + Math.PI * a / 5000, Math.PI + Math.PI * b / 5000); ctx.stroke();
+                });
+                const settings = [1200, 2500, 4000];
+                const target = v.rpm || settings[Math.floor(t / 1.6) % 3];
+                partModal.needle = partModal.needle == null ? 0 : partModal.needle + (target - partModal.needle) * 0.08;
+                const ang = Math.PI + Math.PI * partModal.needle / 5000;
+                ctx.strokeStyle = '#f8fafc'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + (R - 14) * Math.cos(ang), cy + (R - 14) * Math.sin(ang)); ctx.stroke();
+                ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 15px Inter, sans-serif';
+                ctx.fillText(`${Math.round(partModal.needle)} RPM`, cx, cy + 26);
+                ctx.font = '11px Inter, sans-serif';
+                // rechts: draaiend wiel dat sneller gaat
+                const wx = 262, wy = 74, w = 2 * Math.PI * partModal.needle / 60;
+                const rot = (partModal.rot = (partModal.rot || 0) + w * 0.0025);
+                ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(wx, wy, 34, 0, Math.PI * 2); ctx.stroke();
+                for (let i = 0; i < 4; i++) {
+                    const a = rot + i * Math.PI / 2;
+                    ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + 34 * Math.cos(a), wy + 34 * Math.sin(a)); ctx.stroke();
+                }
+                ctx.fillStyle = '#c4b5fd';
+                ctx.fillText(`ω = ${fmt(w, 1)} rad/s`, wx, 136);
+                ctx.fillStyle = '#94a3b8'; ctx.fillText('sneller draaien', wx, 152); ctx.fillText('= meer vermogen', wx, 166);
+            }
+            requestAnimationFrame(drawPartLoop);
+        }
+
+        // =====================================================================
+        //  WERKBANK-ANIMATIE (canvas)
+        // =====================================================================
+        const partAnim = { block: 0, crank: 0, piston: 0, ecu: 0 };
+        let celebrateUntil = 0;
+        const smoke = [];
+        const STROKE_COLORS = ['rgba(56,189,248,.28)', 'rgba(167,139,250,.32)', 'rgba(251,146,60,.35)', 'rgba(148,163,184,.25)'];
+        const STROKE_NAMES = ['Inlaat', 'Compressie', 'Arbeid', 'Uitlaat'];
+
+        const easeOutBack = (p) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+        const easeOutBounce = (x) => {
+            const n1 = 7.5625, d1 = 2.75;
+            if (x < 1 / d1) return n1 * x * x;
+            if (x < 2 / d1) return n1 * (x -= 1.5 / d1) * x + 0.75;
+            if (x < 2.5 / d1) return n1 * (x -= 2.25 / d1) * x + 0.9375;
+            return n1 * (x -= 2.625 / d1) * x + 0.984375;
+        };
+
+        function startEngineCanvasLoop() {
+            const canvas = document.getElementById('engine-canvas');
+            const W = 560, H = 260;
+            const ctx = setupHiDPI(canvas, W, H);
+            let theta = 0, last = performance.now();
+
+            function prog(cat, now, dur = 650) { return partAnim[cat] ? clamp((now - partAnim[cat]) / dur, 0, 1) : 1; }
+
+            function render(now) {
+                const dt = Math.min(0.05, (now - last) / 1000); last = now;
+                ctx.clearRect(0, 0, W, H);
+
+                // blauwdruk-raster
+                ctx.strokeStyle = 'rgba(51,65,85,.25)'; ctx.lineWidth = 1;
+                for (let x = 0; x < W; x += 20) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H - 22); ctx.stroke(); }
+                for (let y = 0; y < H - 22; y += 20) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+                // werkbank
+                ctx.fillStyle = '#0f172a'; ctx.fillRect(0, H - 22, W, 22);
+                ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(0, H - 22); ctx.lineTo(W, H - 22); ctx.stroke();
+
+                const v = currentValues();
+                const hasB = !!v.n, hasC = !!v.s, hasP = !!v.d, hasE = !!v.rpm;
+                const running = hasB && hasC && hasP && hasE;
+                const celebrating = now < celebrateUntil;
+
+                if (running) theta += dt * 2 * Math.PI * (0.4 + v.rpm / 1500) * (celebrating ? 1.7 : 1);
+
+                if (!hasB) {
+                    ctx.fillStyle = '#64748b'; ctx.font = '14px Inter, sans-serif'; ctx.textAlign = 'center';
+                    ctx.fillText('🔨 De werkbank is leeg. Kies een cilinderblok om te beginnen...', W / 2, H / 2 - 10);
+                    // ECU kan al gekozen zijn
+                    if (hasE) drawECU(ctx, W, now, false, v.rpm);
+                    drawSmoke(ctx, dt);
+                    requestAnimationFrame(render);
+                    return;
+                }
+
+                const n = v.n;
+                const flyX = hasC ? W - 62 : W;
+                const areaL = 24, areaR = hasC ? W - 120 : W - 24;
+                const spacing = Math.min((areaR - areaL) / n, 110);
+                const left = (areaL + areaR) / 2 - spacing * n / 2, right = left + spacing * n;
+                const r = hasC ? v.s * 0.25 : 22;
+                const L = 62, pistonH = 14, crankY = 200;
+                const headY = crankY - 27.5 - L - pistonH - 8;   // vaste koppositie (lange krukas)
+                const boreW = hasP ? v.d * 0.5 : 40;
+                const shake = running ? Math.sin(theta * n * 2) * (celebrating ? 1.4 : 0.6) : 0;
+
+                const pB = prog('block', now), eB = easeOutBounce(pB);
+                ctx.save();
+                ctx.translate(0, -(1 - eB) * 200 + shake);
+                ctx.globalAlpha = clamp(pB * 3, 0, 1);
+
+                // motorblok
+                const bx0 = left + 2, bx1 = right - 2;
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(bx0, headY - 4, bx1 - bx0, crankY - 26 - headY);
+                ctx.strokeStyle = celebrating ? '#34d399' : '#38bdf8'; ctx.lineWidth = 2;
+                ctx.strokeRect(bx0, headY - 4, bx1 - bx0, crankY - 26 - headY);
+                // cilinderkop
+                ctx.fillStyle = '#334155'; ctx.fillRect(bx0 - 4, headY - 18, bx1 - bx0 + 8, 14);
+                ctx.strokeStyle = '#475569'; ctx.strokeRect(bx0 - 4, headY - 18, bx1 - bx0 + 8, 14);
+                ctx.globalAlpha = 1;
+                ctx.restore();
+
+                // per cilinder
+                for (let i = 0; i < n; i++) {
+                    const cx = left + spacing * (i + 0.5);
+                    const ti = theta + i * (4 * Math.PI / n);       // ontstekingsvolgorde gelijk verdeeld over 720°
+                    const ph = ((ti % (4 * Math.PI)) + 4 * Math.PI) % (4 * Math.PI);
+                    const strokeIdx = Math.floor(ph / Math.PI);       // 0 inlaat, 1 compressie, 2 arbeid, 3 uitlaat
+
+                    ctx.save();
+                    ctx.translate(0, -(1 - eB) * 200 + shake);
+
+                    // boring
+                    ctx.fillStyle = '#0b1220';
+                    ctx.fillRect(cx - boreW / 2, headY, boreW, crankY - 30 - headY);
+
+                    // krukas-positie en zuiger
+                    const thC = hasC ? ti : Math.PI;                  // zonder krukas: zuiger onderin
+                    const pinY = crankY - (r * Math.cos(thC) + Math.sqrt(L * L - Math.pow(r * Math.sin(thC), 2)));
+                    const pP = prog('piston', now), eP = easeOutBack(pP);
+                    const pistonDrop = -(1 - eP) * 150;
+                    const top = pinY - pistonH + 4 + pistonDrop;
+
+                    // gas in de verbrandingsruimte
+                    if (hasP && running) {
+                        ctx.fillStyle = STROKE_COLORS[strokeIdx];
+                        ctx.fillRect(cx - boreW / 2, headY, boreW, Math.max(0, top - headY));
+                        // ontploffing bij begin arbeidsslag
+                        const k = strokeIdx === 2 ? clamp(1 - (ph - 2 * Math.PI) / 1.1, 0, 1) : 0;
+                        if (k > 0) {
+                            const gy = (headY + top) / 2;
+                            const grad = ctx.createRadialGradient(cx, headY + 4, 1, cx, gy, boreW);
+                            grad.addColorStop(0, `rgba(254,240,138,${k})`);
+                            grad.addColorStop(0.4, `rgba(251,146,60,${k * 0.9})`);
+                            grad.addColorStop(1, 'rgba(239,68,68,0)');
+                            ctx.fillStyle = grad;
+                            ctx.fillRect(cx - boreW / 2, headY, boreW, Math.max(0, top - headY));
+                            // vonk
+                            ctx.strokeStyle = `rgba(254,249,195,${k})`; ctx.lineWidth = 1.5;
+                            ctx.beginPath();
+                            for (let s = 0; s < 4; s++) {
+                                const a = Math.random() * Math.PI;
+                                ctx.moveTo(cx, headY + 2); ctx.lineTo(cx + Math.cos(a) * 9 * k, headY + 2 + Math.sin(a) * 9 * k);
+                            }
+                            ctx.stroke();
+                            // drukpijl op zuiger
+                            if (k > 0.3) drawArrow(ctx, cx, headY + 6, cx, top - 2, `rgba(254,215,170,${k})`, 2);
+                        }
+                        // uitlaatgas
+                        if (strokeIdx === 3 && Math.random() < dt * (8 + v.rpm / 400)) {
+                            smoke.push({ x: cx + boreW / 2 + 6, y: headY - 34, vx: 10 + Math.random() * 14, vy: -18 - Math.random() * 18, r: 3 + Math.random() * 2, life: 1 });
+                        }
+                    }
+
+                    // cilinderwand
+                    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                    ctx.strokeRect(cx - boreW / 2 - 1, headY - 1, boreW + 2, crankY - 28 - headY);
+
+                    // uitlaatpijpje
+                    if (hasE) {
+                        ctx.fillStyle = '#475569';
+                        ctx.fillRect(cx + boreW / 2 - 4, headY - 32, 7, 16);
+                    }
+                    // bougie
+                    if (hasE) {
+                        ctx.fillStyle = '#cbd5e1'; ctx.fillRect(cx - 3, headY - 26, 6, 10);
+                        ctx.fillStyle = '#ef4444'; ctx.fillRect(cx - 2, headY - 30, 4, 4);
+                    }
+
+                    // krukas
+                    if (hasC) {
+                        const pC = prog('crank', now), eC = easeOutBack(pC);
+                        const px = cx + r * Math.sin(ti) * eC, py = crankY - r * Math.cos(ti) * eC;
+                        // contragewicht
+                        ctx.save(); ctx.translate(cx, crankY); ctx.scale(eC, eC); ctx.rotate(ti);
+                        ctx.fillStyle = '#92400e';
+                        ctx.beginPath(); ctx.arc(0, 0, r * 0.9, 0.25 * Math.PI, 0.75 * Math.PI); ctx.lineTo(0, 0); ctx.fill();
+                        ctx.restore();
+                        // drijfstang
+                        if (hasP) {
+                            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+                            ctx.globalAlpha = clamp(pP * 2, 0, 1);
+                            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cx, pinY + pistonDrop); ctx.stroke();
+                            ctx.globalAlpha = 1;
+                        }
+                        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+                        ctx.beginPath(); ctx.moveTo(cx, crankY); ctx.lineTo(px, py); ctx.stroke();
+                        ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(cx, crankY, 7 * eC, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#fde68a'; ctx.beginPath(); ctx.arc(px, py, 3.5 * eC, 0, Math.PI * 2); ctx.fill();
+                    }
+
+                    // zuiger
+                    if (hasP) {
+                        ctx.globalAlpha = clamp(pP * 2, 0, 1);
+                        ctx.fillStyle = '#3b82f6'; ctx.fillRect(cx - boreW / 2 + 1, top, boreW - 2, pistonH);
+                        ctx.fillStyle = '#1d4ed8'; ctx.fillRect(cx - boreW / 2 + 1, top + 3, boreW - 2, 2); ctx.fillRect(cx - boreW / 2 + 1, top + 7, boreW - 2, 1);
+                        ctx.globalAlpha = 1;
+                    }
+                    ctx.restore();
+
+                    // slagnaam op de werkbank
+                    if (running) {
+                        ctx.font = 'bold 9px Inter, sans-serif'; ctx.textAlign = 'center';
+                        ctx.fillStyle = ['#7dd3fc', '#c4b5fd', '#fdba74', '#cbd5e1'][strokeIdx];
+                        ctx.fillText(STROKE_NAMES[strokeIdx], cx, H - 8);
+                    }
+                }
+
+                // hoofdas + vliegwiel
+                if (hasC) {
+                    const pC = prog('crank', now), eC = easeOutBack(pC);
+                    ctx.save(); ctx.translate(0, shake);
+                    ctx.strokeStyle = '#78716c'; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.moveTo(left + 6, crankY); ctx.lineTo(flyX, crankY); ctx.stroke();
+                    ctx.translate(flyX, crankY); ctx.scale(eC, eC); ctx.rotate(theta);
+                    ctx.fillStyle = '#1e293b'; ctx.strokeStyle = celebrating ? '#34d399' : '#f59e0b'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    ctx.lineWidth = 2;
+                    for (let k = 0; k < 6; k++) {
+                        const a = k * Math.PI / 3;
+                        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(30 * Math.cos(a), 30 * Math.sin(a)); ctx.stroke();
+                    }
+                    ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                    ctx.font = '9px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#94a3b8';
+                    ctx.fillText('vliegwiel', flyX, H - 8);
+                }
+
+                if (hasE) drawECU(ctx, W, now, running, v.rpm);
+
+                // bericht als er nog iets mist
+                if (!running) {
+                    const missing = ['crank', 'piston', 'ecu'].filter(c => !selectedConfig[c]).map(c => PART_NAMES[c]);
+                    ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#fbbf24';
+                    ctx.fillText(`Nog nodig: ${missing.join(', ')}`, 10, 16);
+                }
+
+                drawSmoke(ctx, dt);
+
+                // feest-glow
+                if (celebrating) {
+                    const a = 0.25 * (0.5 + 0.5 * Math.sin(now / 90));
+                    ctx.strokeStyle = `rgba(52,211,153,${a + 0.2})`; ctx.lineWidth = 6;
+                    ctx.strokeRect(3, 3, W - 6, H - 6);
+                }
+                requestAnimationFrame(render);
+            }
+
+            function drawECU(ctx, W, now, running, rpm) {
+                const pE = prog('ecu', now), e = easeOutBack(pE);
+                const x = W - 112 + (1 - e) * 140, y = 8;
+                ctx.fillStyle = '#0f172a'; ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.roundRect(x, y, 104, 38, 8); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = running ? (Math.sin(now / 120) > 0 ? '#22c55e' : '#15803d') : '#f59e0b';
+                ctx.beginPath(); ctx.arc(x + 12, y + 12, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#c4b5fd'; ctx.font = 'bold 9px Inter, sans-serif'; ctx.textAlign = 'left';
+                ctx.fillText('ECU', x + 22, y + 15);
+                ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 12px ui-monospace, monospace';
+                ctx.fillText(`${rpm} RPM`, x + 10, y + 31);
+            }
+
+            function drawSmoke(ctx, dt) {
+                for (let i = smoke.length - 1; i >= 0; i--) {
+                    const p = smoke[i];
+                    p.x += p.vx * dt; p.y += p.vy * dt; p.r += 10 * dt; p.life -= dt * 0.9;
+                    if (p.life <= 0) { smoke.splice(i, 1); continue; }
+                    ctx.fillStyle = `rgba(148,163,184,${p.life * 0.35})`;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+                }
+                if (smoke.length > 220) smoke.splice(0, smoke.length - 220);
+            }
+            requestAnimationFrame(render);
+        }
+
+        // =====================================================================
+        //  CONFETTI
+        // =====================================================================
+        function fireConfetti() {
+            const cv = document.getElementById('confetti-canvas');
+            const W = window.innerWidth, H = window.innerHeight;
+            const ctx = setupHiDPI(cv, W, H);
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#a78bfa', '#f472b6', '#facc15'];
+            const parts = [];
+            for (let i = 0; i < 180; i++) {
+                const fromLeft = i % 2 === 0;
+                parts.push({
+                    x: fromLeft ? 0 : W, y: H * 0.65,
+                    vx: (fromLeft ? 1 : -1) * (250 + Math.random() * 450), vy: -(450 + Math.random() * 550),
+                    w: 6 + Math.random() * 6, h: 3 + Math.random() * 4, rot: Math.random() * 6, vr: (Math.random() - .5) * 14,
+                    c: rand(colors)
+                });
+            }
+            let last = performance.now();
+            const t0 = last;
+            function step(now) {
+                const dt = Math.min(0.04, (now - last) / 1000); last = now;
+                ctx.clearRect(0, 0, W, H);
+                parts.forEach(p => {
+                    p.vy += 900 * dt; p.vx *= 0.99; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+                    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c;
+                    ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+                });
+                if (now - t0 < 3200) requestAnimationFrame(step); else ctx.clearRect(0, 0, W, H);
+            }
+            requestAnimationFrame(step);
+        }
+
+        // =====================================================================
+        //  RONDLEIDING
+        // =====================================================================
+        const TUT_BOARD = [
+            { sel: '#mission-grid', title: 'Welkom, monteur! 👋', text: 'Dit is het contractenbord. Elke kaart is een opdracht van een klant, met de eisen waar hun motor aan moet voldoen. Accepteer een contract, dan laat ik je de werkbank zien.' }
+        ];
+        const TUT_BENCH = [
+            { sel: '#req-panel', title: '1. De eisen van de klant', text: 'Hier staan de eisen. Onder elke eis staat waarom de klant dat wil. De balk laat zien hoe dicht je erbij zit.' },
+            { sel: '#parts-panel', title: '2. Kies je onderdelen', text: 'Kies van boven naar beneden: cilinderblok, krukas, zuiger en ECU. Weet je niet wat een onderdeel doet? Klik op "Wat doet dit?" voor uitleg met een animatie.' },
+            { sel: '#bench-panel', title: '3. Je motor op de werkbank', text: 'Hier zie je je motor in elkaar gezet worden en draaien. De kleuren in de cilinders laten de 4 slagen zien. Onder de motor staan de meetwaarden.' },
+            { sel: '#calc-panel', title: '4. De natuurkunde erachter', text: 'Hier wordt live uitgerekend wat jouw onderdelen doen, stap voor stap met de formules. Zo zie je precies waarom je motor een bepaald koppel of vermogen heeft.' },
+            { sel: '#req-panel', title: '5. Hulp nodig?', text: 'Klopt een eis niet? Dan zie je hoeveel je ernaast zit, en het 💡 Tip-knopje vertelt welk onderdeel je moet aanpassen. De timer staat stil tijdens deze rondleiding. Succes!' }
+        ];
+        const tut = { steps: [], i: 0, active: false, el: null };
+        let tutPendingBench = false;
+
+        function startTutorial() {
+            const onBench = !document.getElementById('screen-workbench').classList.contains('hidden');
+            tut.steps = onBench ? TUT_BENCH : TUT_BOARD;
+            tut.i = 0; tut.active = true;
+            if (onBench) timerPaused = true;
+            document.getElementById('tut-box').classList.remove('hidden');
+            showTutStep();
+        }
+        function showTutStep() {
+            if (tut.el) tut.el.classList.remove('tut-focus');
+            const s = tut.steps[tut.i];
+            tut.el = document.querySelector(s.sel);
+            if (tut.el) {
+                tut.el.classList.add('tut-focus');
+                tut.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            document.getElementById('tut-step').innerText = `Stap ${tut.i + 1}/${tut.steps.length}`;
+            document.getElementById('tut-title').innerText = s.title;
+            document.getElementById('tut-text').innerText = s.text;
+            const last = tut.i === tut.steps.length - 1;
+            document.getElementById('tut-next').innerHTML = last ? 'Begrepen! <i data-lucide="circle-check-big" class="w-4 h-4"></i>' : 'Volgende <i data-lucide="arrow-right" class="w-4 h-4"></i>';
+            icons();
+            const box = document.getElementById('tut-box');
+            replayAnim(box, 'anim-fly-in');
+        }
+        function nextTutStep() {
+            if (tut.i < tut.steps.length - 1) { tut.i++; showTutStep(); }
+            else endTutorial(true);
+        }
+        function endTutorial(completed) {
+            if (tut.el) tut.el.classList.remove('tut-focus');
+            tut.el = null; tut.active = false;
+            document.getElementById('tut-box').classList.add('hidden');
+            if (tut.steps === TUT_BOARD && completed) tutPendingBench = true;
+            if (tut.steps === TUT_BENCH || !completed) store.set('tutSeen', true);
+            timerPaused = false;
         }
     </script>
 </body>
